@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SillyPaintings - Digital Art Studio</title>
+  <title>SillyPaintings - Professional Digital Art Studio</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
   <style>
@@ -40,6 +40,7 @@
       font-weight: 700;
       color: #ff6b9d;
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
     }
 
     .header-actions {
@@ -96,11 +97,28 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tool-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
     }
 
     .tool-btn:hover {
       background: rgba(255, 255, 255, 0.2);
       transform: scale(1.05);
+    }
+
+    .tool-btn:hover::before {
+      left: 100%;
     }
 
     .tool-btn.active {
@@ -130,6 +148,7 @@
       height: calc(100% - 40px);
       max-width: 1200px;
       max-height: 800px;
+      cursor: crosshair;
     }
 
     canvas {
@@ -238,6 +257,35 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
 
+    /* Advanced brush controls */
+    .brush-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .brush-type-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid transparent;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      padding: 8px;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .brush-type-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .brush-type-btn.active {
+      border-color: #ff6b9d;
+      background: rgba(255, 107, 157, 0.3);
+    }
+
     /* Layer Panel */
     .layers-panel {
       background: rgba(255, 255, 255, 0.1);
@@ -255,6 +303,18 @@
       justify-content: space-between;
       cursor: pointer;
       transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .layer-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: transparent;
+      transition: background 0.3s ease;
     }
 
     .layer-item:hover {
@@ -264,6 +324,10 @@
     .layer-item.active {
       background: #ff6b9d;
       box-shadow: 0 0 15px rgba(255, 107, 157, 0.3);
+    }
+
+    .layer-item.active::before {
+      background: #fff;
     }
 
     .layer-controls {
@@ -309,6 +373,25 @@
       transition: all 0.3s ease;
     }
 
+    /* Pressure sensitivity indicator */
+    .pressure-indicator {
+      width: 100%;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pressure-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4ecdc4, #ff6b9d);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+      width: 50%;
+    }
+
     /* Bottom Toolbar */
     .bottom-toolbar {
       background: rgba(0, 0, 0, 0.3);
@@ -344,6 +427,16 @@
       font-weight: 600;
     }
 
+    /* Fill tool cursor */
+    .fill-cursor {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="white" stroke="black" d="M10 4l6 6-6 6-6-6z"/></svg>'), auto !important;
+    }
+
+    /* Eraser cursor */
+    .eraser-cursor {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect x="2" y="8" width="16" height="8" rx="2" fill="pink" stroke="black"/></svg>'), auto !important;
+    }
+
     /* Responsive Design */
     @media (max-width: 1024px) {
       .right-sidebar {
@@ -373,97 +466,6 @@
       .tool-btn {
         min-width: 60px;
       }
-    }
-
-    /* Removed spinning animation - logo stays static and professional */
-
-    /* Pro-style enhancements */
-    .tool-btn {
-      position: relative;
-      overflow: hidden;
-    }
-
-    .tool-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s;
-    }
-
-    .tool-btn:hover::before {
-      left: 100%;
-    }
-
-    /* Advanced brush controls */
-    .brush-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    .brush-type-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid transparent;
-      border-radius: 6px;
-      color: white;
-      cursor: pointer;
-      padding: 8px;
-      font-size: 12px;
-      transition: all 0.3s ease;
-      text-align: center;
-    }
-
-    .brush-type-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .brush-type-btn.active {
-      border-color: #ff6b9d;
-      background: rgba(255, 107, 157, 0.3);
-    }
-
-    /* Pressure sensitivity indicator */
-    .pressure-indicator {
-      width: 100%;
-      height: 20px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      margin-bottom: 10px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .pressure-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #4ecdc4, #ff6b9d);
-      border-radius: 10px;
-      transition: width 0.3s ease;
-      width: 50%;
-    }
-
-    /* Enhanced layer panel */
-    .layer-item {
-      position: relative;
-    }
-
-    .layer-item::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: transparent;
-      transition: background 0.3s ease;
-    }
-
-    .layer-item.active::before {
-      background: #ff6b9d;
     }
 
     /* Loading animation */
@@ -501,12 +503,23 @@
     .file-input {
       display: none;
     }
+
+    /* Tool size indicator */
+    .size-indicator {
+      position: fixed;
+      pointer-events: none;
+      border: 2px solid #ff6b9d;
+      border-radius: 50%;
+      background: rgba(255, 107, 157, 0.2);
+      z-index: 1000;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="loading" id="loadingScreen">
     <div class="loading-spinner"></div>
-    Loading your art studio...
+    Loading your professional art studio...
   </div>
 
   <div class="header">
@@ -531,7 +544,10 @@
         ✏️
       </button>
       <button class="tool-btn" onclick="setTool('eraser')" title="Eraser" id="eraser-tool">
-        🧽
+        🧹
+      </button>
+      <button class="tool-btn" onclick="setTool('fill')" title="Fill Tool" id="fill-tool">
+        🪣
       </button>
       <button class="tool-btn" onclick="setTool('spray')" title="Airbrush" id="spray-tool">
         💨
@@ -542,13 +558,11 @@
       <button class="tool-btn" onclick="setTool('smudge')" title="Smudge Tool" id="smudge-tool">
         👆
       </button>
-      <button class="tool-btn" onclick="setTool('blur')" title="Blur Tool" id="blur-tool">
-        🌫️
-      </button>
     </div>
 
     <div class="canvas-area">
       <div id="canvas-container"></div>
+      <div class="size-indicator" id="sizeIndicator"></div>
     </div>
 
     <div class="right-sidebar">
@@ -572,7 +586,7 @@
       </div>
 
       <div class="sidebar-section">
-        <div class="sidebar-title">🖌️ Brush Settings</div>
+        <div class="sidebar-title">🖌️ Tool Settings</div>
         <div class="brush-preview">
           <div class="brush-stroke" id="brushPreview"></div>
         </div>
@@ -659,6 +673,7 @@
     let undoStack = [];
     let redoStack = [];
     let pressureSimulation = 0.5;
+    let isMouseDown = false;
     
     // Canvas settings
     const CANVAS_WIDTH = 1200;
@@ -679,9 +694,6 @@
       updateLayersPanel();
       updateBrushPreview();
       setupEventListeners();
-      
-      // Remove the spinning animation from logo
-      // document.querySelector('.logo').classList.add('sparkle');
     }
 
     function setupEventListeners() {
@@ -691,6 +703,9 @@
           resizeCanvas(canvas);
         });
       });
+
+      // Mouse move for size indicator
+      document.addEventListener('mousemove', updateSizeIndicator);
 
       // Keyboard shortcuts
       document.addEventListener('keydown', (e) => {
@@ -726,6 +741,9 @@
           case 'e':
             if (!e.ctrlKey && !e.metaKey) setTool('eraser');
             break;
+          case 'f':
+            setTool('fill');
+            break;
           case 's':
             if (!e.ctrlKey && !e.metaKey) setTool('spray');
             break;
@@ -740,8 +758,58 @@
             const brushType = brushTypes[parseInt(e.key) - 1];
             if (brushType) setBrushType(brushType);
             break;
+          case '[':
+            // Decrease brush size
+            e.preventDefault();
+            const newSizeDown = Math.max(1, currentSize - 5);
+            updateBrushSize(newSizeDown);
+            document.getElementById('brushSize').value = newSizeDown;
+            break;
+          case ']':
+            // Increase brush size
+            e.preventDefault();
+            const newSizeUp = Math.min(200, currentSize + 5);
+            updateBrushSize(newSizeUp);
+            document.getElementById('brushSize').value = newSizeUp;
+            break;
         }
       });
+    }
+
+    function updateSizeIndicator(e) {
+      const indicator = document.getElementById('sizeIndicator');
+      const canvasContainer = document.getElementById('canvas-container');
+      const containerRect = canvasContainer.getBoundingClientRect();
+      
+      // Only show indicator when hovering over canvas
+      if (e.clientX >= containerRect.left && e.clientX <= containerRect.right &&
+          e.clientY >= containerRect.top && e.clientY <= containerRect.bottom) {
+        
+        if (currentTool === 'brush' || currentTool === 'paintbrush' || 
+            currentTool === 'pencil' || currentTool === 'eraser' || 
+            currentTool === 'spray' || currentTool === 'marker') {
+          
+          const size = currentSize * (containerRect.width / CANVAS_WIDTH) * zoomLevel;
+          indicator.style.width = size + 'px';
+          indicator.style.height = size + 'px';
+          indicator.style.left = (e.clientX - size / 2) + 'px';
+          indicator.style.top = (e.clientY - size / 2) + 'px';
+          indicator.style.display = 'block';
+          
+          // Change indicator color for eraser
+          if (currentTool === 'eraser') {
+            indicator.style.borderColor = '#ff4444';
+            indicator.style.background = 'rgba(255, 68, 68, 0.2)';
+          } else {
+            indicator.style.borderColor = '#ff6b9d';
+            indicator.style.background = 'rgba(255, 107, 157, 0.2)';
+          }
+        } else {
+          indicator.style.display = 'none';
+        }
+      } else {
+        indicator.style.display = 'none';
+      }
     }
 
     function createInitialLayers() {
@@ -780,6 +848,13 @@
       // Add drawing event listeners for undo/redo
       fabricCanvas.on('path:created', function() {
         saveState();
+      });
+
+      // Add fill tool click handler
+      fabricCanvas.on('mouse:down', function(options) {
+        if (currentTool === 'fill') {
+          handleFillClick(options, fabricCanvas);
+        }
       });
       
       canvases[index] = fabricCanvas;
@@ -824,6 +899,25 @@
       
       currentTool = tool;
       updateCurrentCanvas();
+      updateCursor();
+    }
+
+    function updateCursor() {
+      const container = document.getElementById('canvas-container');
+      
+      // Remove all cursor classes
+      container.classList.remove('fill-cursor', 'eraser-cursor');
+      
+      switch (currentTool) {
+        case 'fill':
+          container.classList.add('fill-cursor');
+          break;
+        case 'eraser':
+          container.classList.add('eraser-cursor');
+          break;
+        default:
+          container.style.cursor = 'crosshair';
+      }
     }
 
     function updateCurrentCanvas() {
@@ -853,9 +947,12 @@
           
         case 'eraser':
           activeCanvas.isDrawingMode = true;
-          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
+          activeCanvas.freeDrawingBrush = new fabric.EraserBrush(activeCanvas);
           activeCanvas.freeDrawingBrush.width = currentSize;
-          activeCanvas.freeDrawingBrush.globalCompositeOperation = 'destination-out';
+          break;
+          
+        case 'fill':
+          activeCanvas.isDrawingMode = false;
           break;
           
         case 'spray':
@@ -881,14 +978,7 @@
           
         case 'smudge':
           activeCanvas.isDrawingMode = false;
-          // Smudge tool would need custom implementation
           alert('Smudge tool coming soon! 🎨');
-          break;
-          
-        case 'blur':
-          activeCanvas.isDrawingMode = false;
-          // Blur tool would need custom implementation  
-          alert('Blur tool coming soon! 🌫️');
           break;
           
         default:
@@ -903,7 +993,6 @@
     }
 
     function createAdvancedBrush(canvas) {
-      // Create a custom brush with advanced settings
       const brush = new fabric.PencilBrush(canvas);
       return brush;
     }
@@ -927,40 +1016,102 @@
           brush.shadowColor = 'transparent';
           break;
         case 'texture':
-          // Add some texture variation
           brush.width = effectiveSize * (0.9 + Math.random() * 0.2);
           break;
-        default: // normal
+        default:
           brush.shadowBlur = Math.max(1, currentSize * 0.1 * (1 - currentHardness));
           brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.3);
       }
     }
 
-    // Brush type functions
-    function setBrushType(type) {
-      currentBrushType = type;
+    // Fill tool implementation
+    function handleFillClick(options, canvas) {
+      const pointer = canvas.getPointer(options.e);
+      const x = Math.floor(pointer.x);
+      const y = Math.floor(pointer.y);
       
-      // Update UI
-      document.querySelectorAll('.brush-type-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`${type}-brush`).classList.add('active');
+      // Get canvas context for pixel manipulation
+      const ctx = canvas.getContext();
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixelData = imageData.data;
       
-      updateCurrentCanvas();
-      updateBrushPreview();
+      // Get target color at click position
+      const targetColor = getPixelColor(pixelData, x, y, canvas.width);
+      const fillColor = hexToRgb(currentColor);
+      
+      // Don't fill if target and fill colors are the same
+      if (colorsEqual(targetColor, fillColor)) return;
+      
+      // Perform flood fill
+      floodFill(pixelData, x, y, targetColor, fillColor, canvas.width, canvas.height);
+      
+      // Apply the changes
+      ctx.putImageData(imageData, 0, 0);
+      canvas.renderAll();
+      
+      // Save state for undo
+      saveState();
     }
 
-    // New brush setting functions
-    function updateFlow(flow) {
-      currentFlow = flow / 100;
-      document.getElementById('flowValue').textContent = flow + '%';
-      updateCurrentCanvas();
-      updateBrushPreview();
+    function getPixelColor(pixelData, x, y, width) {
+      const index = (y * width + x) * 4;
+      return {
+        r: pixelData[index],
+        g: pixelData[index + 1],
+        b: pixelData[index + 2],
+        a: pixelData[index + 3]
+      };
     }
 
-    function updateHardness(hardness) {
-      currentHardness = hardness / 100;
-      document.getElementById('hardnessValue').textContent = hardness + '%';
-      updateCurrentCanvas();
-      updateBrushPreview();
+    function setPixelColor(pixelData, x, y, width, color) {
+      const index = (y * width + x) * 4;
+      pixelData[index] = color.r;
+      pixelData[index + 1] = color.g;
+      pixelData[index + 2] = color.b;
+      pixelData[index + 3] = color.a || 255;
+    }
+
+    function colorsEqual(color1, color2) {
+      return color1.r === color2.r && 
+             color1.g === color2.g && 
+             color1.b === color2.b && 
+             color1.a === color2.a;
+    }
+
+    function floodFill(pixelData, startX, startY, targetColor, fillColor, width, height) {
+      const stack = [{x: startX, y: startY}];
+      const visited = new Set();
+      
+      while (stack.length > 0) {
+        const {x, y} = stack.pop();
+        
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+        
+        const key = y * width + x;
+        if (visited.has(key)) continue;
+        visited.add(key);
+        
+        const currentColor = getPixelColor(pixelData, x, y, width);
+        if (!colorsEqual(currentColor, targetColor)) continue;
+        
+        setPixelColor(pixelData, x, y, width, fillColor);
+        
+        // Add neighboring pixels
+        stack.push({x: x + 1, y: y});
+        stack.push({x: x - 1, y: y});
+        stack.push({x: x, y: y + 1});
+        stack.push({x: x, y: y - 1});
+      }
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+        a: 255
+      } : null;
     }
 
     function hexToRgba(hex, opacity) {
@@ -974,12 +1125,22 @@
       return hex;
     }
 
+    // Brush type functions
+    function setBrushType(type) {
+      currentBrushType = type;
+      
+      document.querySelectorAll('.brush-type-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`${type}-brush`).classList.add('active');
+      
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
     // Color functions
     function selectColor(color) {
       currentColor = color;
       document.getElementById('colorPicker').value = color;
       
-      // Update active color button
       document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
       const colorBtn = document.querySelector(`[onclick="selectColor('${color}')"]`);
       if (colorBtn) colorBtn.classList.add('active');
@@ -999,6 +1160,20 @@
     function updateOpacity(opacity) {
       currentOpacity = opacity / 100;
       document.getElementById('opacityValue').textContent = opacity + '%';
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    function updateFlow(flow) {
+      currentFlow = flow / 100;
+      document.getElementById('flowValue').textContent = flow + '%';
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    function updateHardness(hardness) {
+      currentHardness = hardness / 100;
+      document.getElementById('hardnessValue').textContent = hardness + '%';
       updateCurrentCanvas();
       updateBrushPreview();
     }
@@ -1028,14 +1203,13 @@
           preview.style.boxShadow = `inset 0 0 ${effectiveSize}px rgba(0,0,0,0.3)`;
           preview.style.background = `linear-gradient(45deg, ${currentColor}, ${currentColor}dd)`;
           break;
-        default: // normal
+        default:
           const softBlur = Math.max(0.5, effectiveSize * 0.1 * (1 - currentHardness));
           preview.style.filter = `blur(${softBlur}px)`;
           preview.style.boxShadow = `0 0 ${softBlur * 4}px ${currentColor}44`;
           preview.style.borderRadius = '50px';
       }
       
-      // Update pressure indicator
       updatePressureIndicator();
     }
 
@@ -1046,7 +1220,6 @@
       }
     }
 
-    // Simulate pressure changes for demo
     function simulatePressureChange() {
       pressureSimulation = 0.3 + Math.random() * 0.7;
       updatePressureIndicator();
@@ -1056,7 +1229,6 @@
       }
     }
 
-    // Simulate pressure changes every few seconds
     setInterval(simulatePressureChange, 3000);
 
     // Layer functions
@@ -1064,7 +1236,6 @@
       const panel = document.getElementById('layersPanel');
       panel.innerHTML = '';
       
-      // Create layer items in reverse order (top layer first)
       for (let i = canvases.length - 1; i >= 0; i--) {
         const layerItem = document.createElement('div');
         layerItem.className = `layer-item ${i === currentLayerIndex ? 'active' : ''}`;
@@ -1083,7 +1254,6 @@
     }
 
     function setActiveLayer(index) {
-      // Disable drawing mode on all canvases
       canvases.forEach(canvas => {
         canvas.isDrawingMode = false;
       });
@@ -1111,23 +1281,19 @@
         return;
       }
       
-      // Remove canvas element
       const canvasEl = document.getElementById(`canvas-${index}`);
       if (canvasEl) {
         canvasEl.remove();
       }
       
-      // Remove from canvases array
       canvases.splice(index, 1);
       
-      // Reindex remaining canvases
       for (let i = index; i < canvases.length; i++) {
         const canvas = canvases[i];
         canvas.lowerCanvasEl.id = `canvas-${i}`;
         canvas.lowerCanvasEl.style.zIndex = i;
       }
       
-      // Adjust current layer index
       if (currentLayerIndex >= index) {
         currentLayerIndex = Math.max(0, currentLayerIndex - 1);
       }
@@ -1172,17 +1338,14 @@
           state: JSON.stringify(activeCanvas.toJSON())
         });
         
-        // Limit undo stack size
         if (undoStack.length > 50) {
           undoStack.shift();
         }
         
-        // Clear redo stack when new action is performed
         redoStack = [];
       }
     }
 
-    // Action functions
     function undoAction() {
       if (undoStack.length === 0) return;
       
@@ -1190,13 +1353,11 @@
       const activeCanvas = canvases[currentState.layerIndex];
       
       if (activeCanvas) {
-        // Save current state for redo
         redoStack.push({
           layerIndex: currentState.layerIndex,
           state: JSON.stringify(activeCanvas.toJSON())
         });
         
-        // Restore previous state
         activeCanvas.loadFromJSON(currentState.state, () => {
           activeCanvas.renderAll();
         });
@@ -1210,13 +1371,11 @@
       const activeCanvas = canvases[redoState.layerIndex];
       
       if (activeCanvas) {
-        // Save current state for undo
         undoStack.push({
           layerIndex: redoState.layerIndex,
           state: JSON.stringify(activeCanvas.toJSON())
         });
         
-        // Restore redo state
         activeCanvas.loadFromJSON(redoState.state, () => {
           activeCanvas.renderAll();
         });
@@ -1237,7 +1396,6 @@
     
     function newProject() {
       if (confirm('Create a new project? Current work will be lost!')) {
-        // Clear undo/redo stacks
         undoStack = [];
         redoStack = [];
         
@@ -1251,7 +1409,6 @@
           canvas.renderAll();
         });
         
-        // Reset states and UI
         currentLayerIndex = 0;
         zoomLevel = 1.0;
         updateZoom();
@@ -1273,7 +1430,6 @@
           }
         };
         
-        // Save each layer's data
         canvases.forEach((canvas, index) => {
           projectData.layers.push({
             index: index,
@@ -1314,7 +1470,6 @@
             throw new Error('Invalid project file format');
           }
           
-          // Clear existing project
           canvases.forEach(canvas => {
             const canvasEl = canvas.lowerCanvasEl;
             if (canvasEl && canvasEl.parentNode) {
@@ -1323,7 +1478,6 @@
           });
           canvases = [];
           
-          // Load layers
           projectData.layers.forEach((layerData, index) => {
             createLayer(index);
             const canvas = canvases[index];
@@ -1331,7 +1485,6 @@
             canvas.loadFromJSON(layerData.data, () => {
               canvas.renderAll();
               
-              // Set visibility
               if (layerData.visible === false) {
                 canvas.lowerCanvasEl.style.display = 'none';
                 canvas.upperCanvasEl.style.display = 'none';
@@ -1339,7 +1492,6 @@
             });
           });
           
-          // Set current layer
           currentLayerIndex = projectData.settings?.currentLayer || 0;
           if (currentLayerIndex >= canvases.length) {
             currentLayerIndex = 0;
@@ -1348,7 +1500,6 @@
           setActiveLayer(currentLayerIndex);
           updateLayersPanel();
           
-          // Clear file input
           event.target.value = '';
           
         } catch (error) {
@@ -1361,24 +1512,20 @@
     
     function exportPNG() {
       try {
-        // Create a single merged canvas
         const mergedCanvas = document.createElement('canvas');
         mergedCanvas.width = CANVAS_WIDTH;
         mergedCanvas.height = CANVAS_HEIGHT;
         const ctx = mergedCanvas.getContext('2d');
         
-        // Set white background
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         
-        // Draw each visible layer
         canvases.forEach(canvas => {
           if (canvas.lowerCanvasEl.style.display !== 'none') {
             ctx.drawImage(canvas.lowerCanvasEl, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
           }
         });
         
-        // Create download link
         const image = mergedCanvas.toDataURL('image/png');
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
@@ -1391,13 +1538,6 @@
       } catch (error) {
         alert('Error exporting image: ' + error.message);
       }
-    }
-
-    // Fill tool implementation (basic flood fill)
-    function performFloodFill(canvas, x, y, targetColor, replacementColor) {
-      // This is a simplified flood fill - in a real implementation,
-      // you'd want a more sophisticated algorithm
-      alert('Fill tool functionality coming soon! 🎨');
     }
 
     // Touch support for mobile devices
@@ -1433,12 +1573,11 @@
       });
     }
 
-    // Initialize touch support after canvases are created
     setTimeout(() => {
       addTouchSupport();
     }, 2000);
 
-    // Fun easter eggs - but no spinning logo
+    // Easter egg - click logo 5 times for color effect
     function addEasterEggs() {
       let clickCount = 0;
       document.querySelector('.logo').addEventListener('click', function() {
@@ -1448,11 +1587,9 @@
           this.style.webkitBackgroundClip = 'text';
           this.style.webkitTextFillColor = 'transparent';
           this.style.backgroundSize = '300% 300%';
-          // Removed spinning animation - just color gradient effect
           
           setTimeout(() => {
             clickCount = 0;
-            // Reset to original after 5 seconds
             this.style.background = '';
             this.style.webkitBackgroundClip = '';
             this.style.webkitTextFillColor = '';
@@ -1462,7 +1599,6 @@
       });
     }
 
-    // Initialize easter eggs
     setTimeout(() => {
       addEasterEggs();
     }, 3000);
