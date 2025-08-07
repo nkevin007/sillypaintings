@@ -375,14 +375,95 @@
       }
     }
 
-    /* Fun animations */
-    @keyframes sparkle {
-      0%, 100% { transform: scale(1) rotate(0deg); }
-      50% { transform: scale(1.1) rotate(180deg); }
+    /* Removed spinning animation - logo stays static and professional */
+
+    /* Pro-style enhancements */
+    .tool-btn {
+      position: relative;
+      overflow: hidden;
     }
 
-    .sparkle {
-      animation: sparkle 2s infinite;
+    .tool-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .tool-btn:hover::before {
+      left: 100%;
+    }
+
+    /* Advanced brush controls */
+    .brush-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .brush-type-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid transparent;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      padding: 8px;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .brush-type-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .brush-type-btn.active {
+      border-color: #ff6b9d;
+      background: rgba(255, 107, 157, 0.3);
+    }
+
+    /* Pressure sensitivity indicator */
+    .pressure-indicator {
+      width: 100%;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pressure-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4ecdc4, #ff6b9d);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+      width: 50%;
+    }
+
+    /* Enhanced layer panel */
+    .layer-item {
+      position: relative;
+    }
+
+    .layer-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: transparent;
+      transition: background 0.3s ease;
+    }
+
+    .layer-item.active::before {
+      background: #ff6b9d;
     }
 
     /* Loading animation */
@@ -443,20 +524,26 @@
       <button class="tool-btn active" onclick="setTool('brush')" title="Brush" id="brush-tool">
         🖌️
       </button>
+      <button class="tool-btn" onclick="setTool('paintbrush')" title="Paint Brush" id="paintbrush-tool">
+        🎨
+      </button>
       <button class="tool-btn" onclick="setTool('pencil')" title="Pencil" id="pencil-tool">
         ✏️
       </button>
       <button class="tool-btn" onclick="setTool('eraser')" title="Eraser" id="eraser-tool">
         🧽
       </button>
-      <button class="tool-btn" onclick="setTool('spray')" title="Spray Paint" id="spray-tool">
-        🎨
+      <button class="tool-btn" onclick="setTool('spray')" title="Airbrush" id="spray-tool">
+        💨
       </button>
       <button class="tool-btn" onclick="setTool('marker')" title="Marker" id="marker-tool">
         🖍️
       </button>
-      <button class="tool-btn" onclick="setTool('fill')" title="Fill Tool" id="fill-tool">
-        🪣
+      <button class="tool-btn" onclick="setTool('smudge')" title="Smudge Tool" id="smudge-tool">
+        👆
+      </button>
+      <button class="tool-btn" onclick="setTool('blur')" title="Blur Tool" id="blur-tool">
+        🌫️
       </button>
     </div>
 
@@ -485,23 +572,52 @@
       </div>
 
       <div class="sidebar-section">
-        <div class="sidebar-title">🖌️ Brush</div>
+        <div class="sidebar-title">🖌️ Brush Settings</div>
         <div class="brush-preview">
           <div class="brush-stroke" id="brushPreview"></div>
         </div>
+        
+        <div class="brush-controls">
+          <button class="brush-type-btn active" onclick="setBrushType('normal')" id="normal-brush">Normal</button>
+          <button class="brush-type-btn" onclick="setBrushType('texture')" id="texture-brush">Textured</button>
+          <button class="brush-type-btn" onclick="setBrushType('soft')" id="soft-brush">Soft</button>
+          <button class="brush-type-btn" onclick="setBrushType('hard')" id="hard-brush">Hard</button>
+        </div>
+        
         <div class="slider-container">
           <div class="slider-label">
             <span>Size</span>
             <span id="sizeValue">10</span>
           </div>
-          <input type="range" class="slider" id="brushSize" min="1" max="100" value="10" oninput="updateBrushSize(this.value)">
+          <input type="range" class="slider" id="brushSize" min="1" max="200" value="10" oninput="updateBrushSize(this.value)">
         </div>
+        
         <div class="slider-container">
           <div class="slider-label">
             <span>Opacity</span>
             <span id="opacityValue">100%</span>
           </div>
           <input type="range" class="slider" id="brushOpacity" min="1" max="100" value="100" oninput="updateOpacity(this.value)">
+        </div>
+        
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>Flow</span>
+            <span id="flowValue">100%</span>
+          </div>
+          <input type="range" class="slider" id="brushFlow" min="1" max="100" value="100" oninput="updateFlow(this.value)">
+        </div>
+        
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>Hardness</span>
+            <span id="hardnessValue">100%</span>
+          </div>
+          <input type="range" class="slider" id="brushHardness" min="0" max="100" value="100" oninput="updateHardness(this.value)">
+        </div>
+        
+        <div class="pressure-indicator" title="Brush Pressure">
+          <div class="pressure-bar" id="pressureBar"></div>
         </div>
       </div>
 
@@ -532,13 +648,17 @@
     let canvases = [];
     let currentLayerIndex = 0;
     let currentTool = 'brush';
+    let currentBrushType = 'normal';
     let currentColor = '#000000';
     let currentSize = 10;
     let currentOpacity = 1.0;
+    let currentFlow = 1.0;
+    let currentHardness = 1.0;
     let zoomLevel = 1.0;
     let isDrawing = false;
     let undoStack = [];
     let redoStack = [];
+    let pressureSimulation = 0.5;
     
     // Canvas settings
     const CANVAS_WIDTH = 1200;
@@ -560,8 +680,8 @@
       updateBrushPreview();
       setupEventListeners();
       
-      // Add some fun welcome animations
-      document.querySelector('.logo').classList.add('sparkle');
+      // Remove the spinning animation from logo
+      // document.querySelector('.logo').classList.add('sparkle');
     }
 
     function setupEventListeners() {
@@ -601,13 +721,24 @@
             setTool('brush');
             break;
           case 'p':
-            setTool('pencil');
+            if (!e.ctrlKey && !e.metaKey) setTool('paintbrush');
             break;
           case 'e':
-            setTool('eraser');
+            if (!e.ctrlKey && !e.metaKey) setTool('eraser');
             break;
           case 's':
             if (!e.ctrlKey && !e.metaKey) setTool('spray');
+            break;
+          case 'm':
+            setTool('marker');
+            break;
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+            const brushTypes = ['normal', 'texture', 'soft', 'hard'];
+            const brushType = brushTypes[parseInt(e.key) - 1];
+            if (brushType) setBrushType(brushType);
             break;
         }
       });
@@ -703,15 +834,19 @@
         case 'brush':
           activeCanvas.isDrawingMode = true;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          activeCanvas.freeDrawingBrush.width = currentSize;
-          activeCanvas.freeDrawingBrush.color = currentColor;
-          activeCanvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
+          setupBrushSettings(activeCanvas);
+          break;
+          
+        case 'paintbrush':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.freeDrawingBrush = createAdvancedBrush(activeCanvas);
+          setupPaintBrushSettings(activeCanvas);
           break;
           
         case 'pencil':
           activeCanvas.isDrawingMode = true;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          activeCanvas.freeDrawingBrush.width = Math.max(1, currentSize * 0.5);
+          activeCanvas.freeDrawingBrush.width = Math.max(1, currentSize * 0.3);
           activeCanvas.freeDrawingBrush.color = currentColor;
           activeCanvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
           break;
@@ -727,37 +862,105 @@
           activeCanvas.isDrawingMode = true;
           if (fabric.SprayBrush) {
             activeCanvas.freeDrawingBrush = new fabric.SprayBrush(activeCanvas);
-            activeCanvas.freeDrawingBrush.width = currentSize * 2;
-            activeCanvas.freeDrawingBrush.color = currentColor;
-            activeCanvas.freeDrawingBrush.density = 20;
+            activeCanvas.freeDrawingBrush.width = currentSize * 1.5;
+            activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
+            activeCanvas.freeDrawingBrush.density = Math.max(5, 30 - (currentHardness * 0.25));
           } else {
-            // Fallback to regular brush if SprayBrush not available
             activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
             activeCanvas.freeDrawingBrush.width = currentSize;
-            activeCanvas.freeDrawingBrush.color = currentColor;
+            activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
           }
           break;
           
         case 'marker':
           activeCanvas.isDrawingMode = true;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          activeCanvas.freeDrawingBrush.width = currentSize * 1.5;
-          activeCanvas.freeDrawingBrush.color = currentColor;
+          activeCanvas.freeDrawingBrush.width = currentSize * 1.2;
+          activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, 0.7 * currentOpacity);
           break;
           
-        case 'fill':
+        case 'smudge':
           activeCanvas.isDrawingMode = false;
-          // Fill tool would need custom implementation
+          // Smudge tool would need custom implementation
+          alert('Smudge tool coming soon! 🎨');
+          break;
+          
+        case 'blur':
+          activeCanvas.isDrawingMode = false;
+          // Blur tool would need custom implementation  
+          alert('Blur tool coming soon! 🌫️');
           break;
           
         default:
           activeCanvas.isDrawingMode = false;
       }
+    }
 
-      // Apply opacity
-      if (activeCanvas.freeDrawingBrush) {
-        activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity);
+    function setupBrushSettings(canvas) {
+      canvas.freeDrawingBrush.width = currentSize;
+      canvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
+      canvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
+    }
+
+    function createAdvancedBrush(canvas) {
+      // Create a custom brush with advanced settings
+      const brush = new fabric.PencilBrush(canvas);
+      return brush;
+    }
+
+    function setupPaintBrushSettings(canvas) {
+      const brush = canvas.freeDrawingBrush;
+      const effectiveSize = currentSize * (0.8 + (pressureSimulation * 0.4));
+      const effectiveOpacity = currentOpacity * currentFlow * (0.7 + (pressureSimulation * 0.3));
+      
+      brush.width = effectiveSize;
+      brush.color = hexToRgba(currentColor, effectiveOpacity);
+      
+      // Apply brush type effects
+      switch (currentBrushType) {
+        case 'soft':
+          brush.shadowBlur = Math.max(2, currentSize * 0.3 * (1 - currentHardness));
+          brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.5);
+          break;
+        case 'hard':
+          brush.shadowBlur = 0;
+          brush.shadowColor = 'transparent';
+          break;
+        case 'texture':
+          // Add some texture variation
+          brush.width = effectiveSize * (0.9 + Math.random() * 0.2);
+          break;
+        default: // normal
+          brush.shadowBlur = Math.max(1, currentSize * 0.1 * (1 - currentHardness));
+          brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.3);
       }
+    }
+
+    // Brush type functions
+    function setBrushType(type) {
+      currentBrushType = type;
+      
+      // Update UI
+      document.querySelectorAll('.brush-type-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`${type}-brush`).classList.add('active');
+      
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    // New brush setting functions
+    function updateFlow(flow) {
+      currentFlow = flow / 100;
+      document.getElementById('flowValue').textContent = flow + '%';
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    function updateHardness(hardness) {
+      currentHardness = hardness / 100;
+      document.getElementById('hardnessValue').textContent = hardness + '%';
+      updateCurrentCanvas();
+      updateBrushPreview();
     }
 
     function hexToRgba(hex, opacity) {
@@ -802,19 +1005,59 @@
 
     function updateBrushPreview() {
       const preview = document.getElementById('brushPreview');
-      preview.style.height = Math.max(2, currentSize / 5) + 'px';
-      preview.style.backgroundColor = currentColor;
-      preview.style.opacity = currentOpacity;
+      const effectiveSize = Math.max(2, currentSize / 5);
       
-      // Add some fun brush effects
-      if (currentTool === 'spray') {
-        preview.style.filter = 'blur(1px)';
-      } else if (currentTool === 'marker') {
-        preview.style.filter = 'blur(0.5px)';
-      } else {
-        preview.style.filter = 'none';
+      preview.style.height = effectiveSize + 'px';
+      preview.style.backgroundColor = currentColor;
+      preview.style.opacity = currentOpacity * currentFlow;
+      
+      // Apply brush type effects to preview
+      switch (currentBrushType) {
+        case 'soft':
+          const blurAmount = Math.max(1, effectiveSize * 0.3 * (1 - currentHardness));
+          preview.style.filter = `blur(${blurAmount}px)`;
+          preview.style.boxShadow = `0 0 ${blurAmount * 2}px ${currentColor}`;
+          break;
+        case 'hard':
+          preview.style.filter = 'none';
+          preview.style.boxShadow = 'none';
+          preview.style.borderRadius = '2px';
+          break;
+        case 'texture':
+          preview.style.filter = 'none';
+          preview.style.boxShadow = `inset 0 0 ${effectiveSize}px rgba(0,0,0,0.3)`;
+          preview.style.background = `linear-gradient(45deg, ${currentColor}, ${currentColor}dd)`;
+          break;
+        default: // normal
+          const softBlur = Math.max(0.5, effectiveSize * 0.1 * (1 - currentHardness));
+          preview.style.filter = `blur(${softBlur}px)`;
+          preview.style.boxShadow = `0 0 ${softBlur * 4}px ${currentColor}44`;
+          preview.style.borderRadius = '50px';
+      }
+      
+      // Update pressure indicator
+      updatePressureIndicator();
+    }
+
+    function updatePressureIndicator() {
+      const pressureBar = document.getElementById('pressureBar');
+      if (pressureBar) {
+        pressureBar.style.width = (pressureSimulation * 100) + '%';
       }
     }
+
+    // Simulate pressure changes for demo
+    function simulatePressureChange() {
+      pressureSimulation = 0.3 + Math.random() * 0.7;
+      updatePressureIndicator();
+      
+      if (currentTool === 'paintbrush' && canvases[currentLayerIndex]) {
+        updateCurrentCanvas();
+      }
+    }
+
+    // Simulate pressure changes every few seconds
+    setInterval(simulatePressureChange, 3000);
 
     // Layer functions
     function updateLayersPanel() {
@@ -1195,7 +1438,7 @@
       addTouchSupport();
     }, 2000);
 
-    // Fun easter eggs
+    // Fun easter eggs - but no spinning logo
     function addEasterEggs() {
       let clickCount = 0;
       document.querySelector('.logo').addEventListener('click', function() {
@@ -1205,21 +1448,15 @@
           this.style.webkitBackgroundClip = 'text';
           this.style.webkitTextFillColor = 'transparent';
           this.style.backgroundSize = '300% 300%';
-          this.style.animation = 'gradient 2s ease infinite';
-          
-          // Add gradient animation
-          const style = document.createElement('style');
-          style.textContent = `
-            @keyframes gradient {
-              0% { background-position: 0% 50%; }
-              50% { background-position: 100% 50%; }
-              100% { background-position: 0% 50%; }
-            }
-          `;
-          document.head.appendChild(style);
+          // Removed spinning animation - just color gradient effect
           
           setTimeout(() => {
             clickCount = 0;
+            // Reset to original after 5 seconds
+            this.style.background = '';
+            this.style.webkitBackgroundClip = '';
+            this.style.webkitTextFillColor = '';
+            this.style.backgroundSize = '';
           }, 5000);
         }
       });
