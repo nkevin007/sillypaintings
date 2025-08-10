@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student Art Studio - Digital Canvas</title>
+  <title>Silly Paintings Painting World! - Digital Canvas</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
   <style>
@@ -203,7 +203,7 @@
 
     /* Right Sidebar - Enhanced visibility */
     .right-sidebar {
-      width: 320px;
+      width: 340px;
       background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(100, 50, 150, 0.6));
       backdrop-filter: blur(15px);
       border-left: 3px solid rgba(255, 255, 255, 0.2);
@@ -314,6 +314,56 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
+    /* Enhanced Tiny Brush Controls */
+    .tiny-brush-section {
+      background: linear-gradient(135deg, rgba(255, 107, 157, 0.3), rgba(78, 205, 196, 0.2));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .tiny-brush-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .tiny-brush-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .tiny-brush-btn {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      padding: 10px 5px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-align: center;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .tiny-brush-btn:hover {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3));
+      transform: scale(1.05);
+      border-color: #4ecdc4;
+    }
+
+    .tiny-brush-btn.active {
+      border-color: #ff6b9d;
+      background: linear-gradient(135deg, rgba(255, 107, 157, 0.6), rgba(78, 205, 196, 0.4));
+      box-shadow: 0 0 15px rgba(255, 107, 157, 0.5);
+    }
+
     /* Brush controls - Better visibility */
     .brush-controls {
       display: grid;
@@ -406,7 +456,7 @@
       border-color: #4ecdc4;
     }
 
-    /* Brush Preview - Enhanced */
+    /* Enhanced Brush Preview with size display */
     .brush-preview {
       width: 100%;
       height: 80px;
@@ -417,19 +467,29 @@
       overflow: hidden;
       border: 3px solid rgba(255, 255, 255, 0.5);
       box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .brush-stroke {
-      position: absolute;
-      top: 50%;
-      left: 15%;
-      right: 15%;
-      height: 4px;
+      border-radius: 50%;
       background: #333;
-      border-radius: 50px;
-      transform: translateY(-50%);
       transition: all 0.3s ease;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .size-display {
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.6);
+      background: rgba(255, 255, 255, 0.8);
+      padding: 2px 8px;
+      border-radius: 8px;
     }
 
     /* Enhanced pressure indicator */
@@ -556,6 +616,8 @@
       z-index: 1000;
       display: none;
       box-shadow: 0 0 20px rgba(255, 107, 157, 0.5);
+      min-width: 2px;
+      min-height: 2px;
     }
 
     /* Loading animation - More colorful */
@@ -600,7 +662,7 @@
     /* Mobile responsiveness - Improved */
     @media (max-width: 1024px) {
       .right-sidebar {
-        width: 280px;
+        width: 300px;
       }
       
       .tool-btn {
@@ -714,12 +776,12 @@
 <body>
   <div class="loading" id="loadingScreen">
     <div class="loading-spinner"></div>
-    <div>Loading your amazing art studio...</div>
-    <div style="font-size: 16px; margin-top: 15px; opacity: 0.8;">Get ready to create something beautiful! ✨</div>
+    <div>Loading Silly Paintings Painting World...</div>
+    <div style="font-size: 16px; margin-top: 15px; opacity: 0.8;">Get ready to create something silly and beautiful! ✨</div>
   </div>
 
   <div class="header">
-    <div class="logo">Student Art Studio</div>
+    <div class="logo">Silly Paintings Painting World!</div>
     <div class="header-actions">
       <button class="header-btn" onclick="newProject()">🆕 New Canvas</button>
       <button class="header-btn" onclick="saveProject()">💾 Save Art</button>
@@ -785,6 +847,20 @@
         <div class="sidebar-title">🖌️ Brush Settings</div>
         <div class="brush-preview">
           <div class="brush-stroke" id="brushPreview"></div>
+          <div class="size-display" id="sizeDisplay">15px</div>
+        </div>
+        
+        <!-- New Tiny Brush Section -->
+        <div class="tiny-brush-section">
+          <div class="tiny-brush-title">🔬 Tiny Brushes</div>
+          <div class="tiny-brush-grid">
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.1)" id="tiny-01">0.1px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.2)" id="tiny-02">0.2px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.3)" id="tiny-03">0.3px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.5)" id="tiny-05">0.5px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.7)" id="tiny-07">0.7px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.8)" id="tiny-08">0.8px</button>
+          </div>
         </div>
         
         <div class="brush-controls">
@@ -799,7 +875,7 @@
             <span>📏 Size</span>
             <span id="sizeValue">15</span>
           </div>
-          <input type="range" class="slider" id="brushSize" min="1" max="200" value="15" oninput="updateBrushSize(this.value)">
+          <input type="range" class="slider" id="brushSize" min="0.1" max="200" step="0.1" value="15" oninput="updateBrushSize(this.value)">
         </div>
         
         <div class="slider-container">
@@ -860,7 +936,7 @@
     let currentTool = 'brush';
     let currentBrushType = 'normal';
     let currentColor = '#000000';
-    let currentSize = 15; // Increased default size
+    let currentSize = 15;
     let currentOpacity = 1.0;
     let currentFlow = 1.0;
     let currentHardness = 1.0;
@@ -870,6 +946,7 @@
     let redoStack = [];
     let pressureSimulation = 0.5;
     let isMouseDown = false;
+    let isTinyBrushActive = false;
     
     // Canvas settings - Maximized for students
     const CANVAS_WIDTH = 1400;
@@ -895,7 +972,7 @@
 
     function showWelcomeMessage() {
       setTimeout(() => {
-        alert('🎨 Welcome to Student Art Studio! 🎨\n\n✨ Tips for amazing art:\n• Use [/] keys to change brush size quickly\n• Try different brush types for cool effects\n• Use layers to organize your artwork\n• Don\'t forget to save your masterpiece!\n\nHappy painting! 🌈');
+        alert('🎨 Welcome to Silly Paintings Painting World! 🎨\n\n✨ Tips for amazing silly art:\n• Use [/] keys to change brush size quickly\n• Try the new TINY brushes for super detailed work!\n• Use different brush types for cool effects\n• Use layers to organize your silly artwork\n• Don\'t forget to save your masterpiece!\n\nHappy silly painting! 🌈');
       }, 1000);
     }
 
@@ -971,16 +1048,30 @@
             if (brushType) setBrushType(brushType);
             break;
           case '[':
-            // Decrease brush size
+            // Decrease brush size (enhanced for tiny sizes)
             e.preventDefault();
-            const newSizeDown = Math.max(1, currentSize - 5);
+            let newSizeDown;
+            if (currentSize <= 1) {
+              newSizeDown = Math.max(0.1, currentSize - 0.1);
+            } else if (currentSize <= 5) {
+              newSizeDown = Math.max(0.1, currentSize - 0.5);
+            } else {
+              newSizeDown = Math.max(0.1, currentSize - 5);
+            }
             updateBrushSize(newSizeDown);
             document.getElementById('brushSize').value = newSizeDown;
             break;
           case ']':
-            // Increase brush size
+            // Increase brush size (enhanced for tiny sizes)
             e.preventDefault();
-            const newSizeUp = Math.min(200, currentSize + 5);
+            let newSizeUp;
+            if (currentSize < 1) {
+              newSizeUp = Math.min(200, currentSize + 0.1);
+            } else if (currentSize < 5) {
+              newSizeUp = Math.min(200, currentSize + 0.5);
+            } else {
+              newSizeUp = Math.min(200, currentSize + 5);
+            }
             updateBrushSize(newSizeUp);
             document.getElementById('brushSize').value = newSizeUp;
             break;
@@ -1008,20 +1099,35 @@
             currentTool === 'pencil' || currentTool === 'eraser' || 
             currentTool === 'spray' || currentTool === 'marker') {
           
-          const size = currentSize * (containerRect.width / CANVAS_WIDTH) * zoomLevel;
-          indicator.style.width = size + 'px';
-          indicator.style.height = size + 'px';
-          indicator.style.left = (e.clientX - size / 2) + 'px';
-          indicator.style.top = (e.clientY - size / 2) + 'px';
+          // Enhanced size calculation for tiny brushes
+          let displaySize = currentSize * (containerRect.width / CANVAS_WIDTH) * zoomLevel;
+          
+          // Ensure minimum visible size for tiny brushes
+          if (currentSize < 1) {
+            displaySize = Math.max(2, displaySize * 8); // Make tiny brushes more visible
+          } else if (currentSize < 3) {
+            displaySize = Math.max(4, displaySize * 2);
+          }
+          
+          indicator.style.width = displaySize + 'px';
+          indicator.style.height = displaySize + 'px';
+          indicator.style.left = (e.clientX - displaySize / 2) + 'px';
+          indicator.style.top = (e.clientY - displaySize / 2) + 'px';
           indicator.style.display = 'block';
           
           // Change indicator color for eraser
           if (currentTool === 'eraser') {
             indicator.style.borderColor = '#ff4444';
             indicator.style.background = 'radial-gradient(circle, rgba(255, 68, 68, 0.3), rgba(255, 68, 68, 0.1))';
+          } else if (currentSize < 1) {
+            // Special indicator for tiny brushes
+            indicator.style.borderColor = '#00ff00';
+            indicator.style.background = 'radial-gradient(circle, rgba(0, 255, 0, 0.4), rgba(0, 255, 0, 0.2))';
+            indicator.style.borderWidth = '2px';
           } else {
             indicator.style.borderColor = '#ff6b9d';
             indicator.style.background = 'radial-gradient(circle, rgba(255, 107, 157, 0.3), rgba(78, 205, 196, 0.1))';
+            indicator.style.borderWidth = '3px';
           }
         } else {
           indicator.style.display = 'none';
@@ -1059,10 +1165,14 @@
         backgroundColor: index === 0 ? '#ffffff' : 'transparent'
       });
       
-      // Configure drawing settings
+      // Configure drawing settings for tiny brushes
       fabricCanvas.freeDrawingBrush.width = currentSize;
       fabricCanvas.freeDrawingBrush.color = currentColor;
       fabricCanvas.isDrawingMode = false;
+      
+      // Enhanced drawing precision for tiny brushes
+      fabricCanvas.selection = false;
+      fabricCanvas.skipTargetFind = true;
       
       // Add drawing event listeners for undo/redo
       fabricCanvas.on('path:created', function() {
@@ -1107,6 +1217,39 @@
       canvas.setZoom(scale * zoomLevel);
     }
 
+    // Enhanced Tiny Brush Function
+    function setTinyBrush(size) {
+      // Clear all tiny brush active states
+      document.querySelectorAll('.tiny-brush-btn').forEach(btn => btn.classList.remove('active'));
+      
+      // Activate selected tiny brush
+      const tinyId = `tiny-${size.toString().replace('.', '')}`;
+      const tinyBtn = document.getElementById(tinyId);
+      if (tinyBtn) tinyBtn.classList.add('active');
+      
+      // Set the size
+      currentSize = size;
+      isTinyBrushActive = true;
+      
+      // Update UI
+      document.getElementById('brushSize').value = size;
+      document.getElementById('sizeValue').textContent = size;
+      
+      // Update canvas and preview
+      updateCurrentCanvas();
+      updateBrushPreview();
+      
+      // Show feedback
+      showToolMessage(`🔬 Tiny brush ${size}px activated! Perfect for details! ✨`);
+      
+      // Auto-zoom in for tiny brushes to help with precision
+      if (zoomLevel < 2 && size < 1) {
+        zoomLevel = 3;
+        updateZoom();
+        showToolMessage('🔍 Auto-zoomed for tiny brush precision!');
+      }
+    }
+
     // Tool functions
     function setTool(tool) {
       // Remove active class from all tools
@@ -1120,8 +1263,18 @@
       updateCurrentCanvas();
       updateCursor();
       
+      // Clear tiny brush selection when switching tools
+      if (tool !== 'brush' && tool !== 'paintbrush' && tool !== 'pencil') {
+        clearTinyBrushSelection();
+      }
+      
       // Show tool feedback
       showToolFeedback(tool);
+    }
+
+    function clearTinyBrushSelection() {
+      document.querySelectorAll('.tiny-brush-btn').forEach(btn => btn.classList.remove('active'));
+      isTinyBrushActive = false;
     }
 
     function showToolFeedback(tool) {
@@ -1188,6 +1341,9 @@
       const activeCanvas = canvases[currentLayerIndex];
       if (!activeCanvas) return;
       
+      // Get actual brush size (enhanced for tiny brushes)
+      let actualBrushSize = currentSize;
+      
       switch (currentTool) {
         case 'brush':
           activeCanvas.isDrawingMode = true;
@@ -1204,7 +1360,13 @@
         case 'pencil':
           activeCanvas.isDrawingMode = true;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          activeCanvas.freeDrawingBrush.width = Math.max(1, currentSize * 0.4);
+          // Enhanced for tiny sizes
+          if (currentSize < 1) {
+            actualBrushSize = currentSize; // Keep exact tiny size
+          } else {
+            actualBrushSize = Math.max(0.1, currentSize * 0.4);
+          }
+          activeCanvas.freeDrawingBrush.width = actualBrushSize;
           activeCanvas.freeDrawingBrush.color = currentColor;
           activeCanvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
           break;
@@ -1212,7 +1374,13 @@
         case 'eraser':
           activeCanvas.isDrawingMode = true;
           activeCanvas.freeDrawingBrush = new fabric.EraserBrush(activeCanvas);
-          activeCanvas.freeDrawingBrush.width = currentSize * 1.2;
+          // Enhanced eraser sizing
+          if (currentSize < 1) {
+            actualBrushSize = currentSize * 1.5; // Slightly larger for tiny erasers
+          } else {
+            actualBrushSize = currentSize * 1.2;
+          }
+          activeCanvas.freeDrawingBrush.width = actualBrushSize;
           break;
           
         case 'fill':
@@ -1223,12 +1391,12 @@
           activeCanvas.isDrawingMode = true;
           if (fabric.SprayBrush) {
             activeCanvas.freeDrawingBrush = new fabric.SprayBrush(activeCanvas);
-            activeCanvas.freeDrawingBrush.width = currentSize * 1.8;
+            activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 3 : currentSize * 1.8;
             activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
-            activeCanvas.freeDrawingBrush.density = Math.max(5, 40 - (currentHardness * 0.35));
+            activeCanvas.freeDrawingBrush.density = Math.max(1, 40 - (currentHardness * 0.35));
           } else {
             activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-            activeCanvas.freeDrawingBrush.width = currentSize * 1.5;
+            activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 2 : currentSize * 1.5;
             activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow * 0.7);
           }
           break;
@@ -1236,7 +1404,7 @@
         case 'marker':
           activeCanvas.isDrawingMode = true;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          activeCanvas.freeDrawingBrush.width = currentSize * 1.4;
+          activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 2 : currentSize * 1.4;
           activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, 0.75 * currentOpacity);
           break;
           
@@ -1286,7 +1454,13 @@
     }
 
     function setupBrushSettings(canvas) {
-      canvas.freeDrawingBrush.width = currentSize;
+      // Enhanced precision for tiny brushes
+      let actualSize = currentSize;
+      if (currentSize < 1 && isTinyBrushActive) {
+        actualSize = currentSize; // Keep exact tiny size
+      }
+      
+      canvas.freeDrawingBrush.width = actualSize;
       canvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
       canvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
     }
@@ -1298,7 +1472,15 @@
 
     function setupPaintBrushSettings(canvas) {
       const brush = canvas.freeDrawingBrush;
-      const effectiveSize = currentSize * (0.8 + (pressureSimulation * 0.4));
+      
+      // Enhanced size calculation for tiny brushes
+      let effectiveSize;
+      if (currentSize < 1) {
+        effectiveSize = currentSize * (0.9 + (pressureSimulation * 0.1)); // Less pressure variation for tiny
+      } else {
+        effectiveSize = currentSize * (0.8 + (pressureSimulation * 0.4));
+      }
+      
       const effectiveOpacity = currentOpacity * currentFlow * (0.7 + (pressureSimulation * 0.3));
       
       brush.width = effectiveSize;
@@ -1307,7 +1489,7 @@
       // Apply brush type effects
       switch (currentBrushType) {
         case 'soft':
-          brush.shadowBlur = Math.max(3, currentSize * 0.4 * (1 - currentHardness));
+          brush.shadowBlur = currentSize < 1 ? Math.max(0.5, currentSize * 0.8) : Math.max(3, currentSize * 0.4 * (1 - currentHardness));
           brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.6);
           break;
         case 'hard':
@@ -1318,7 +1500,7 @@
           brush.width = effectiveSize * (0.9 + Math.random() * 0.2);
           break;
         default:
-          brush.shadowBlur = Math.max(1, currentSize * 0.15 * (1 - currentHardness));
+          brush.shadowBlur = currentSize < 1 ? Math.max(0.2, currentSize * 0.3) : Math.max(1, currentSize * 0.15 * (1 - currentHardness));
           brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.4);
       }
     }
@@ -1451,10 +1633,29 @@
       updateBrushPreview();
     }
 
-    // Brush settings
+    // Enhanced Brush settings for tiny brushes
     function updateBrushSize(size) {
-      currentSize = parseInt(size);
-      document.getElementById('sizeValue').textContent = size;
+      currentSize = parseFloat(size);
+      
+      // Clear tiny brush selection if not using preset tiny size
+      const tinyPresets = [0.1, 0.2, 0.3, 0.5, 0.7, 0.8];
+      if (!tinyPresets.includes(currentSize)) {
+        clearTinyBrushSelection();
+      }
+      
+      // Enhanced size display
+      let displaySize = currentSize;
+      if (currentSize < 1) {
+        displaySize = currentSize.toFixed(1) + 'px';
+      } else if (currentSize < 10) {
+        displaySize = currentSize.toFixed(1);
+      } else {
+        displaySize = Math.round(currentSize);
+      }
+      
+      document.getElementById('sizeValue').textContent = displaySize;
+      document.getElementById('sizeDisplay').textContent = displaySize;
+      
       updateCurrentCanvas();
       updateBrushPreview();
     }
@@ -1482,38 +1683,65 @@
 
     function updateBrushPreview() {
       const preview = document.getElementById('brushPreview');
-      const effectiveSize = Math.max(3, currentSize / 4);
       
-      preview.style.height = effectiveSize + 'px';
+      // Enhanced preview sizing for tiny brushes
+      let previewSize;
+      if (currentSize < 1) {
+        previewSize = Math.max(2, currentSize * 20); // Make tiny brushes visible in preview
+      } else {
+        previewSize = Math.max(3, currentSize / 4);
+      }
+      
+      preview.style.width = previewSize + 'px';
+      preview.style.height = previewSize + 'px';
       preview.style.backgroundColor = currentColor;
       preview.style.opacity = currentOpacity * currentFlow;
       
       // Apply brush type effects to preview
       switch (currentBrushType) {
         case 'soft':
-          const blurAmount = Math.max(1, effectiveSize * 0.4 * (1 - currentHardness));
+          const blurAmount = currentSize < 1 ? Math.max(0.5, previewSize * 0.2) : Math.max(1, previewSize * 0.4 * (1 - currentHardness));
           preview.style.filter = `blur(${blurAmount}px)`;
           preview.style.boxShadow = `0 0 ${blurAmount * 3}px ${currentColor}`;
           break;
         case 'hard':
           preview.style.filter = 'none';
           preview.style.boxShadow = 'none';
-          preview.style.borderRadius = '3px';
+          preview.style.borderRadius = currentSize < 1 ? '50%' : '3px';
           break;
         case 'texture':
           preview.style.filter = 'none';
-          preview.style.boxShadow = `inset 0 0 ${effectiveSize}px rgba(0,0,0,0.4)`;
+          preview.style.boxShadow = `inset 0 0 ${previewSize}px rgba(0,0,0,0.4)`;
           preview.style.background = `linear-gradient(45deg, ${currentColor}, ${currentColor}dd)`;
           break;
         default:
-          const softBlur = Math.max(0.5, effectiveSize * 0.15 * (1 - currentHardness));
+          const softBlur = currentSize < 1 ? Math.max(0.2, previewSize * 0.1) : Math.max(0.5, previewSize * 0.15 * (1 - currentHardness));
           preview.style.filter = `blur(${softBlur}px)`;
           preview.style.boxShadow = `0 0 ${softBlur * 6}px ${currentColor}66`;
-          preview.style.borderRadius = '50px';
+          preview.style.borderRadius = '50%';
+      }
+      
+      // Special highlighting for tiny brushes
+      if (currentSize < 1) {
+        preview.style.border = '2px solid #00ff00';
+        preview.style.animation = 'tinyGlow 2s ease-in-out infinite alternate';
+      } else {
+        preview.style.border = 'none';
+        preview.style.animation = 'none';
       }
       
       updatePressureIndicator();
     }
+
+    // Add tiny glow animation
+    const tinyGlowStyle = document.createElement('style');
+    tinyGlowStyle.textContent = `
+      @keyframes tinyGlow {
+        from { box-shadow: 0 0 5px #00ff00, inset 0 0 5px rgba(0, 255, 0, 0.2); }
+        to { box-shadow: 0 0 15px #00ff00, inset 0 0 10px rgba(0, 255, 0, 0.4); }
+      }
+    `;
+    document.head.appendChild(tinyGlowStyle);
 
     function updatePressureIndicator() {
       const pressureBar = document.getElementById('pressureBar');
@@ -1621,9 +1849,9 @@
       }
     }
 
-    // Enhanced Zoom functions
+    // Enhanced Zoom functions with tiny brush considerations
     function zoomIn() {
-      zoomLevel = Math.min(zoomLevel * 1.25, 8.0);
+      zoomLevel = Math.min(zoomLevel * 1.25, 16.0); // Increased max zoom for tiny brushes
       updateZoom();
       showToolMessage(`🔍 Zoomed in to ${Math.round(zoomLevel * 100)}%`);
     }
@@ -1721,7 +1949,7 @@
     }
     
     function newProject() {
-      if (confirm('🆕 Create a new canvas? Your current artwork will be lost!')) {
+      if (confirm('🆕 Create a new canvas? Your current silly artwork will be lost!')) {
         undoStack = [];
         redoStack = [];
         
@@ -1742,21 +1970,31 @@
         setActiveLayer(0);
         updateCurrentCanvas();
         
-        showToolMessage('🆕 New canvas created! Start painting! ✨');
+        showToolMessage('🆕 New canvas created! Start painting something silly! ✨');
       }
     }
     
     function saveProject() {
       try {
         const projectData = {
-          version: '2.0',
+          version: '2.1',
+          app: 'Silly Paintings Painting World',
           timestamp: new Date().toISOString(),
           layers: [],
           settings: {
             width: CANVAS_WIDTH,
             height: CANVAS_HEIGHT,
             currentLayer: currentLayerIndex,
-            zoom: zoomLevel
+            zoom: zoomLevel,
+            brushSettings: {
+              size: currentSize,
+              color: currentColor,
+              opacity: currentOpacity,
+              flow: currentFlow,
+              hardness: currentHardness,
+              type: currentBrushType,
+              tool: currentTool
+            }
           }
         };
         
@@ -1772,14 +2010,14 @@
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        const exportFileDefaultName = `student_artwork_${timestamp}.json`;
+        const exportFileDefaultName = `silly_painting_${timestamp}.json`;
         
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
         linkElement.setAttribute('download', exportFileDefaultName);
         linkElement.click();
         
-        showToolMessage('💾 Project saved successfully!');
+        showToolMessage('💾 Silly painting saved successfully!');
         
       } catch (error) {
         showToolMessage('❌ Error saving project: ' + error.message);
@@ -1838,12 +2076,41 @@
             updateZoom();
           }
           
+          // Restore brush settings if available
+          if (projectData.settings?.brushSettings) {
+            const brushSettings = projectData.settings.brushSettings;
+            
+            if (brushSettings.size !== undefined) {
+              currentSize = brushSettings.size;
+              document.getElementById('brushSize').value = currentSize;
+              updateBrushSize(currentSize);
+            }
+            
+            if (brushSettings.color) {
+              selectColor(brushSettings.color);
+            }
+            
+            if (brushSettings.opacity !== undefined) {
+              currentOpacity = brushSettings.opacity;
+              document.getElementById('brushOpacity').value = currentOpacity * 100;
+              updateOpacity(currentOpacity * 100);
+            }
+            
+            if (brushSettings.type) {
+              setBrushType(brushSettings.type);
+            }
+            
+            if (brushSettings.tool) {
+              setTool(brushSettings.tool);
+            }
+          }
+          
           setActiveLayer(currentLayerIndex);
           updateLayersPanel();
           
           event.target.value = '';
           
-          showToolMessage('📂 Project loaded successfully!');
+          showToolMessage('📂 Silly painting loaded successfully!');
           
         } catch (error) {
           showToolMessage('❌ Error loading project: ' + error.message);
@@ -1874,13 +2141,13 @@
         const image = mergedCanvas.toDataURL('image/png');
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        link.download = `student_masterpiece_${timestamp}.png`;
+        link.download = `silly_masterpiece_${timestamp}.png`;
         link.href = image;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        showToolMessage('📷 Artwork exported successfully! 🎉');
+        showToolMessage('📷 Silly artwork exported successfully! 🎉');
         
       } catch (error) {
         showToolMessage('❌ Error exporting image: ' + error.message);
@@ -1939,7 +2206,7 @@
           // Add sparkle effect
           createSparkles();
           
-          showToolMessage('🌈 You found the rainbow mode! Keep creating amazing art! ✨');
+          showToolMessage('🌈 You found the silly rainbow mode! Keep creating amazing silly art! ✨');
           
           setTimeout(() => {
             clickCount = 0;
@@ -1950,7 +2217,7 @@
             this.style.animation = '';
           }, 8000);
         } else if (clickCount === 3) {
-          showToolMessage('🎯 Almost there! Click 2 more times for a surprise! ✨');
+          showToolMessage('🎯 Almost there! Click 2 more times for a silly surprise! ✨');
         }
       });
     }
@@ -2012,62 +2279,22 @@
     function autoSave() {
       try {
         const projectData = {
-          version: '2.0',
+          version: '2.1',
+          app: 'Silly Paintings Painting World',
           timestamp: new Date().toISOString(),
           layers: [],
           settings: {
             width: CANVAS_WIDTH,
             height: CANVAS_HEIGHT,
             currentLayer: currentLayerIndex,
-            zoom: zoomLevel
+            zoom: zoomLevel,
+            brushSettings: {
+              size: currentSize,
+              color: currentColor,
+              opacity: currentOpacity,
+              flow: currentFlow,
+              hardness: currentHardness,
+              type: currentBrushType,
+              tool: currentTool
+            }
           }
-        };
-        
-        canvases.forEach((canvas, index) => {
-          projectData.layers.push({
-            index: index,
-            data: canvas.toJSON(),
-            visible: canvas.lowerCanvasEl.style.display !== 'none'
-          });
-        });
-        
-        autoSaveData = projectData;
-      } catch (error) {
-        console.log('Auto-save failed:', error);
-      }
-    }
-
-    // Auto-save every 30 seconds
-    setInterval(autoSave, 30000);
-
-    // Show helpful tips periodically
-    const tips = [
-      "💡 Tip: Use the [ and ] keys to quickly change brush size!",
-      "🎨 Tip: Try different brush types for unique effects!",
-      "📚 Tip: Use layers to organize different parts of your artwork!",
-      "🔍 Tip: Zoom in for detailed work, zoom out to see the big picture!",
-      "🌈 Tip: Experiment with opacity and flow for interesting effects!",
-      "⚡ Tip: Use Ctrl+Z to undo and Ctrl+Shift+Z to redo!",
-      "🖌️ Tip: The soft brush is great for shading and blending!",
-      "🪣 Tip: Use the fill tool to quickly color large areas!"
-    ];
-
-    let tipIndex = 0;
-    function showRandomTip() {
-      if (Math.random() > 0.7) { // Only show tips 30% of the time
-        showToolMessage(tips[tipIndex % tips.length]);
-        tipIndex++;
-      }
-    }
-
-    // Show tips every 2 minutes
-    setInterval(showRandomTip, 120000);
-
-    // Welcome message after initial load
-    setTimeout(() => {
-      showToolMessage('🎨 Welcome to your digital art studio! Start creating something amazing! ✨');
-    }, 3000);
-  </script>
-</body>
-</html>
-
