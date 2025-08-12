@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Silly Paintings Painting World! - Digital Canvas</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Great+Vibes&family=Kalam:wght@300;400;700&family=Pacifico&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
   <style>
     /* Reset and Base Styles */
@@ -106,7 +107,7 @@
 
     /* Left Sidebar - Bigger tools */
     .left-sidebar {
-      width: 120px;
+      width: 140px;
       background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(50, 50, 100, 0.6));
       backdrop-filter: blur(15px);
       border-right: 3px solid rgba(255, 255, 255, 0.2);
@@ -114,8 +115,9 @@
       flex-direction: column;
       align-items: center;
       padding: 25px 15px;
-      gap: 20px;
+      gap: 18px;
       box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
     }
 
     .tool-btn {
@@ -125,7 +127,7 @@
       border: 3px solid rgba(255, 255, 255, 0.3);
       border-radius: 20px;
       color: white;
-      font-size: 32px;
+      font-size: 28px;
       cursor: pointer;
       transition: all 0.4s ease;
       display: flex;
@@ -300,50 +302,121 @@
         background: rgba(255, 255, 255, 0.2);
     }
 
-
-    /* Brush Settings - Enhanced sliders */
-    .slider-container {
-      margin-bottom: 25px;
+    /* Calligraphy Controls */
+    .calligraphy-section {
+      background: linear-gradient(135deg, rgba(139, 69, 19, 0.3), rgba(160, 82, 45, 0.2));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
     }
 
-    .slider-label {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    .calligraphy-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    .slider {
-      width: 100%;
-      height: 10px;
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .font-btn {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+      border: 2px solid rgba(255, 255, 255, 0.4);
       border-radius: 10px;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(78, 205, 196, 0.3));
-      outline: none;
-      -webkit-appearance: none;
+      color: white;
+      cursor: pointer;
+      padding: 8px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-align: center;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .font-btn:hover {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3));
+      transform: scale(1.05);
+      border-color: #4ecdc4;
+    }
+
+    .font-btn.active {
+      border-color: #8B4513;
+      background: linear-gradient(135deg, rgba(139, 69, 19, 0.6), rgba(160, 82, 45, 0.4));
+      box-shadow: 0 0 15px rgba(139, 69, 19, 0.5);
+    }
+
+    .text-input-container {
+      margin-top: 15px;
+    }
+
+    .text-input-container input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 14px;
+      font-family: inherit;
       box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
-    .slider::-webkit-slider-thumb {
-      appearance: none;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      border: 3px solid white;
+    .text-input-container input:focus {
+      outline: none;
+      border-color: #8B4513;
+      background: rgba(255, 255, 255, 0.2);
     }
 
-    .slider::-moz-range-thumb {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+    /* Image Controls */
+    .image-section {
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.3), rgba(0, 191, 255, 0.2));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .image-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .image-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .image-btn {
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.5), rgba(0, 191, 255, 0.3));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 10px;
+      color: white;
       cursor: pointer;
-      border: 3px solid white;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-align: center;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .image-btn:hover {
+      background: linear-gradient(135deg, rgba(30, 144, 255, 0.7), rgba(0, 191, 255, 0.5));
+      transform: scale(1.05);
+      border-color: #00BFFF;
     }
 
     /* Enhanced Tiny Brush Controls */
@@ -394,6 +467,51 @@
       border-color: #ff6b9d;
       background: linear-gradient(135deg, rgba(255, 107, 157, 0.6), rgba(78, 205, 196, 0.4));
       box-shadow: 0 0 15px rgba(255, 107, 157, 0.5);
+    }
+
+    /* Brush Settings - Enhanced sliders */
+    .slider-container {
+      margin-bottom: 25px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .slider {
+      width: 100%;
+      height: 10px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(78, 205, 196, 0.3));
+      outline: none;
+      -webkit-appearance: none;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      border: 3px solid white;
+    }
+
+    .slider::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+      cursor: pointer;
+      border: 3px solid white;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     }
 
     /* Brush controls - Better visibility */
@@ -638,6 +756,14 @@
       cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><rect x="4" y="10" width="20" height="12" rx="3" fill="pink" stroke="black" stroke-width="2"/></svg>'), auto !important;
     }
 
+    .text-cursor {
+      cursor: text !important;
+    }
+
+    .image-cursor {
+      cursor: copy !important;
+    }
+
     /* Tool size indicator - Enhanced */
     .size-indicator {
       position: fixed;
@@ -704,7 +830,7 @@
       }
       
       .left-sidebar {
-        width: 100px;
+        width: 120px;
       }
     }
 
@@ -803,6 +929,12 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+
+    /* Calligraphy fonts */
+    .dancing-script { font-family: 'Dancing Script', cursive; }
+    .great-vibes { font-family: 'Great Vibes', cursive; }
+    .kalam { font-family: 'Kalam', cursive; }
+    .pacifico { font-family: 'Pacifico', cursive; }
   </style>
 </head>
 <body>
@@ -832,6 +964,15 @@
       </button>
       <button class="tool-btn" onclick="setTool('pencil')" title="Pencil Tool" id="pencil-tool">
         ✏️
+      </button>
+      <button class="tool-btn" onclick="setTool('calligraphy')" title="Calligraphy Tool" id="calligraphy-tool">
+        ✒️
+      </button>
+      <button class="tool-btn" onclick="setTool('text')" title="Text Tool" id="text-tool">
+        📝
+      </button>
+      <button class="tool-btn" onclick="setTool('image')" title="Insert Image" id="image-tool">
+        🖼️
       </button>
       <button class="tool-btn" onclick="setTool('eraser')" title="Eraser Tool" id="eraser-tool">
         🧹
@@ -874,10 +1015,40 @@
         </div>
         <input type="color" id="colorPicker" value="#000000" onchange="selectColor(this.value)">
         
-        <!-- New Hex Code Input Field -->
+        <!-- Hex Code Input Field -->
         <div class="hex-input-container">
             <label for="hexInput">Hex Code:</label>
             <input type="text" id="hexInput" placeholder="#000000" oninput="handleHexInput(event)">
+        </div>
+      </div>
+
+      <!-- New Calligraphy Section -->
+      <div class="sidebar-section" id="calligraphySection" style="display: none;">
+        <div class="sidebar-title">✒️ Calligraphy</div>
+        <div class="calligraphy-section">
+          <div class="calligraphy-title">📜 Calligraphy Fonts</div>
+          <div class="font-grid">
+            <button class="font-btn active dancing-script" onclick="setCalligraphyFont('Dancing Script')" id="font-dancing">Dancing</button>
+            <button class="font-btn great-vibes" onclick="setCalligraphyFont('Great Vibes')" id="font-vibes">Vibes</button>
+            <button class="font-btn kalam" onclick="setCalligraphyFont('Kalam')" id="font-kalam">Kalam</button>
+            <button class="font-btn pacifico" onclick="setCalligraphyFont('Pacifico')" id="font-pacifico">Pacific</button>
+          </div>
+          <div class="text-input-container">
+            <input type="text" id="calligraphyText" placeholder="Enter text for calligraphy..." onkeypress="handleCalligraphyEnter(event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- New Image Section -->
+      <div class="sidebar-section" id="imageSection" style="display: none;">
+        <div class="sidebar-title">🖼️ Images</div>
+        <div class="image-section">
+          <div class="image-title">📸 Image Tools</div>
+          <div class="image-controls">
+            <button class="image-btn" onclick="insertImageFromFile()">📁 Upload Image</button>
+            <button class="image-btn" onclick="insertImageFromURL()">🌐 From URL</button>
+            <button class="image-btn" onclick="insertEmojiImage()">😀 Insert Emoji</button>
+          </div>
         </div>
       </div>
 
@@ -888,7 +1059,7 @@
           <div class="size-display" id="sizeDisplay">15px</div>
         </div>
         
-        <!-- New Tiny Brush Section -->
+        <!-- Tiny Brush Section -->
         <div class="tiny-brush-section">
           <div class="tiny-brush-title">🔬 Tiny Brushes</div>
           <div class="tiny-brush-grid">
@@ -966,6 +1137,7 @@
   </div>
 
   <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileLoad(event)">
+  <input type="file" id="imageFileInput" class="file-input" accept="image/*" onchange="handleImageFileLoad(event)">
 
   <script>
     // Global variables
@@ -985,6 +1157,8 @@
     let pressureSimulation = 0.5;
     let isMouseDown = false;
     let isTinyBrushActive = false;
+    let currentCalligraphyFont = 'Dancing Script';
+    let isImageMode = false;
     
     // Canvas settings - Maximized for students
     const CANVAS_WIDTH = 1400;
@@ -1012,7 +1186,7 @@
 
     function showWelcomeMessage() {
       setTimeout(() => {
-        alert('🎨 Welcome to Silly Paintings Painting World! 🎨\n\n✨ Tips for amazing silly art:\n• Use [/] keys to change brush size quickly\n• Try the new TINY brushes for super detailed work!\n• Use different brush types for cool effects\n• Use layers to organize your silly artwork\n• Don\'t forget to save your masterpiece!\n\nHappy silly painting! 🌈');
+        alert('🎨 Welcome to Silly Paintings Painting World! 🎨\n\n✨ NEW Features:\n• ✒️ Beautiful calligraphy fonts for elegant text\n• 🖼️ Insert images from files, URLs, or emojis\n• 📝 Advanced text editing capabilities\n\n💡 Tips for amazing silly art:\n• Use [/] keys to change brush size quickly\n• Try the new TINY brushes for super detailed work!\n• Use different brush types for cool effects\n• Use layers to organize your silly artwork\n• Don\'t forget to save your masterpiece!\n\nHappy silly painting! 🌈');
       }, 1000);
     }
 
@@ -1079,6 +1253,15 @@
           case 'm':
             setTool('marker');
             break;
+          case 't':
+            setTool('text');
+            break;
+          case 'c':
+            if (!e.ctrlKey && !e.metaKey) setTool('calligraphy');
+            break;
+          case 'i':
+            setTool('image');
+            break;
           case '1':
           case '2':
           case '3':
@@ -1137,7 +1320,7 @@
         
         if (currentTool === 'brush' || currentTool === 'paintbrush' || 
             currentTool === 'pencil' || currentTool === 'eraser' || 
-            currentTool === 'spray' || currentTool === 'marker') {
+            currentTool === 'spray' || currentTool === 'marker' || currentTool === 'calligraphy') {
           
           // Enhanced size calculation for tiny brushes
           let displaySize = currentSize * (containerRect.width / CANVAS_WIDTH) * zoomLevel;
@@ -1155,10 +1338,13 @@
           indicator.style.top = (e.clientY - displaySize / 2) + 'px';
           indicator.style.display = 'block';
           
-          // Change indicator color for eraser
+          // Change indicator color for different tools
           if (currentTool === 'eraser') {
             indicator.style.borderColor = '#ff4444';
             indicator.style.background = 'radial-gradient(circle, rgba(255, 68, 68, 0.3), rgba(255, 68, 68, 0.1))';
+          } else if (currentTool === 'calligraphy') {
+            indicator.style.borderColor = '#8B4513';
+            indicator.style.background = 'radial-gradient(circle, rgba(139, 69, 19, 0.4), rgba(160, 82, 45, 0.2))';
           } else if (currentSize < 1) {
             // Special indicator for tiny brushes
             indicator.style.borderColor = '#00ff00';
@@ -1212,10 +1398,15 @@
       
       // Enhanced drawing precision for tiny brushes
       fabricCanvas.selection = false;
-      fabricCanvas.skipTargetFind = true;
+      fabricCanvas.skipTargetFind = false; // Allow object selection
       
       // Add drawing event listeners for undo/redo
       fabricCanvas.on('path:created', function() {
+        saveState();
+      });
+
+      // Add object modification listener
+      fabricCanvas.on('object:modified', function() {
         saveState();
       });
 
@@ -1223,6 +1414,10 @@
       fabricCanvas.on('mouse:down', function(options) {
         if (currentTool === 'fill') {
           handleFillClick(options, fabricCanvas);
+        } else if (currentTool === 'text' || currentTool === 'calligraphy') {
+          handleTextClick(options, fabricCanvas);
+        } else if (currentTool === 'image') {
+          handleImageClick(options, fabricCanvas);
         }
       });
       
@@ -1300,11 +1495,16 @@
       if (toolBtn) toolBtn.classList.add('active');
       
       currentTool = tool;
+      
+      // Show/hide relevant sections
+      document.getElementById('calligraphySection').style.display = tool === 'calligraphy' ? 'block' : 'none';
+      document.getElementById('imageSection').style.display = tool === 'image' ? 'block' : 'none';
+      
       updateCurrentCanvas();
       updateCursor();
       
       // Clear tiny brush selection when switching tools
-      if (tool !== 'brush' && tool !== 'paintbrush' && tool !== 'pencil') {
+      if (tool !== 'brush' && tool !== 'paintbrush' && tool !== 'pencil' && tool !== 'calligraphy') {
         clearTinyBrushSelection();
       }
       
@@ -1322,6 +1522,9 @@
         'brush': '🖌️ Brush Tool',
         'paintbrush': '🎨 Paint Brush',
         'pencil': '✏️ Pencil Tool',
+        'calligraphy': '✒️ Calligraphy Tool',
+        'text': '📝 Text Tool',
+        'image': '🖼️ Image Tool',
         'eraser': '🧹 Eraser Tool',
         'fill': '🪣 Fill Bucket',
         'spray': '💨 Spray Paint',
@@ -1363,7 +1566,7 @@
       const container = document.getElementById('canvas-container');
       
       // Remove all cursor classes
-      container.classList.remove('fill-cursor', 'eraser-cursor');
+      container.classList.remove('fill-cursor', 'eraser-cursor', 'text-cursor', 'image-cursor');
       
       switch (currentTool) {
         case 'fill':
@@ -1371,6 +1574,13 @@
           break;
         case 'eraser':
           container.classList.add('eraser-cursor');
+          break;
+        case 'text':
+        case 'calligraphy':
+          container.classList.add('text-cursor');
+          break;
+        case 'image':
+          container.classList.add('image-cursor');
           break;
         default:
           container.style.cursor = 'crosshair';
@@ -1409,6 +1619,22 @@
           activeCanvas.freeDrawingBrush.width = actualBrushSize;
           activeCanvas.freeDrawingBrush.color = currentColor;
           activeCanvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
+          break;
+          
+        case 'calligraphy':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
+          // Calligraphy brush settings
+          actualBrushSize = currentSize < 1 ? currentSize * 2 : currentSize * 1.5;
+          activeCanvas.freeDrawingBrush.width = actualBrushSize;
+          activeCanvas.freeDrawingBrush.color = currentColor;
+          activeCanvas.freeDrawingBrush.shadowBlur = Math.max(1, actualBrushSize * 0.1);
+          activeCanvas.freeDrawingBrush.shadowColor = hexToRgba(currentColor, 0.3);
+          break;
+          
+        case 'text':
+        case 'image':
+          activeCanvas.isDrawingMode = false;
           break;
           
         case 'eraser':
@@ -1491,6 +1717,220 @@
         messageEl.style.transform = 'translateX(100%)';
         setTimeout(() => document.body.removeChild(messageEl), 400);
       }, 3000);
+    }
+
+    // Calligraphy Functions
+    function setCalligraphyFont(fontFamily) {
+      currentCalligraphyFont = fontFamily;
+      
+      // Update active font button
+      document.querySelectorAll('.font-btn').forEach(btn => btn.classList.remove('active'));
+      const fontButtons = {
+        'Dancing Script': 'font-dancing',
+        'Great Vibes': 'font-vibes',
+        'Kalam': 'font-kalam',
+        'Pacifico': 'font-pacifico'
+      };
+      
+      const activeBtn = document.getElementById(fontButtons[fontFamily]);
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      showToolMessage(`✒️ Calligraphy font: ${fontFamily}`);
+    }
+
+    function handleCalligraphyEnter(event) {
+      if (event.key === 'Enter') {
+        const text = event.target.value;
+        if (text.trim()) {
+          addCalligraphyText(text);
+          event.target.value = '';
+        }
+      }
+    }
+
+    function addCalligraphyText(text) {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (!activeCanvas) return;
+      
+      const fontSize = Math.max(12, currentSize * 2);
+      const fabricText = new fabric.Text(text, {
+        left: CANVAS_WIDTH / 2,
+        top: CANVAS_HEIGHT / 2,
+        fontFamily: currentCalligraphyFont,
+        fontSize: fontSize,
+        fill: currentColor,
+        originX: 'center',
+        originY: 'center',
+        angle: 0,
+        opacity: currentOpacity,
+        shadow: new fabric.Shadow({
+          color: hexToRgba(currentColor, 0.3),
+          blur: Math.max(2, fontSize * 0.05),
+          offsetX: 2,
+          offsetY: 2
+        })
+      });
+      
+      activeCanvas.add(fabricText);
+      activeCanvas.setActiveObject(fabricText);
+      activeCanvas.renderAll();
+      
+      saveState();
+      showToolMessage(`✒️ Beautiful calligraphy added! ✨`);
+    }
+
+    function handleTextClick(options, canvas) {
+      if (currentTool === 'calligraphy') {
+        const text = document.getElementById('calligraphyText').value;
+        if (text.trim()) {
+          const pointer = canvas.getPointer(options.e);
+          const fontSize = Math.max(12, currentSize * 2);
+          
+          const fabricText = new fabric.Text(text, {
+            left: pointer.x,
+            top: pointer.y,
+            fontFamily: currentCalligraphyFont,
+            fontSize: fontSize,
+            fill: currentColor,
+            originX: 'left',
+            originY: 'top',
+            opacity: currentOpacity,
+            shadow: new fabric.Shadow({
+              color: hexToRgba(currentColor, 0.3),
+              blur: Math.max(2, fontSize * 0.05),
+              offsetX: 2,
+              offsetY: 2
+            })
+          });
+          
+          canvas.add(fabricText);
+          canvas.setActiveObject(fabricText);
+          canvas.renderAll();
+          
+          document.getElementById('calligraphyText').value = '';
+          saveState();
+          showToolMessage('✒️ Calligraphy placed on canvas! ✨');
+        } else {
+          showToolMessage('📝 Please enter text for calligraphy first!');
+        }
+      } else if (currentTool === 'text') {
+        const text = prompt('Enter text:');
+        if (text && text.trim()) {
+          const pointer = canvas.getPointer(options.e);
+          const fontSize = Math.max(12, currentSize * 1.5);
+          
+          const fabricText = new fabric.Text(text, {
+            left: pointer.x,
+            top: pointer.y,
+            fontFamily: 'Poppins',
+            fontSize: fontSize,
+            fill: currentColor,
+            originX: 'left',
+            originY: 'top',
+            opacity: currentOpacity
+          });
+          
+          canvas.add(fabricText);
+          canvas.setActiveObject(fabricText);
+          canvas.renderAll();
+          
+          saveState();
+          showToolMessage('📝 Text added to canvas!');
+        }
+      }
+    }
+
+    // Image Functions
+    function handleImageClick(options, canvas) {
+      showToolMessage('🖼️ Use the image controls in the sidebar to insert images!');
+    }
+
+    function insertImageFromFile() {
+      document.getElementById('imageFileInput').click();
+    }
+
+    function handleImageFileLoad(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      if (!file.type.startsWith('image/')) {
+        showToolMessage('❌ Please select a valid image file!');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        addImageToCanvas(e.target.result);
+      };
+      reader.readAsDataURL(file);
+      
+      event.target.value = '';
+    }
+
+    function insertImageFromURL() {
+      const url = prompt('Enter image URL:');
+      if (url && url.trim()) {
+        addImageToCanvas(url.trim());
+      }
+    }
+
+    function insertEmojiImage() {
+      const emoji = prompt('Enter emoji (e.g., 😀, 🎨, 🌈):');
+      if (emoji && emoji.trim()) {
+        addEmojiToCanvas(emoji.trim());
+      }
+    }
+
+    function addImageToCanvas(imageSrc) {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (!activeCanvas) return;
+      
+      fabric.Image.fromURL(imageSrc, function(img) {
+        // Scale image to fit reasonably on canvas
+        const maxSize = 300;
+        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        
+        img.set({
+          left: CANVAS_WIDTH / 2,
+          top: CANVAS_HEIGHT / 2,
+          originX: 'center',
+          originY: 'center',
+          scaleX: scale,
+          scaleY: scale,
+          opacity: currentOpacity
+        });
+        
+        activeCanvas.add(img);
+        activeCanvas.setActiveObject(img);
+        activeCanvas.renderAll();
+        
+        saveState();
+        showToolMessage('🖼️ Image added to canvas! ✨');
+      }, {
+        crossOrigin: 'anonymous'
+      });
+    }
+
+    function addEmojiToCanvas(emoji) {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (!activeCanvas) return;
+      
+      const fontSize = Math.max(48, currentSize * 4);
+      const fabricText = new fabric.Text(emoji, {
+        left: CANVAS_WIDTH / 2,
+        top: CANVAS_HEIGHT / 2,
+        fontSize: fontSize,
+        originX: 'center',
+        originY: 'center',
+        opacity: currentOpacity
+      });
+      
+      activeCanvas.add(fabricText);
+      activeCanvas.setActiveObject(fabricText);
+      activeCanvas.renderAll();
+      
+      saveState();
+      showToolMessage('😀 Emoji added to canvas! Fun! ✨');
     }
 
     function setupBrushSettings(canvas) {
@@ -1650,7 +2090,7 @@
     }
     
     /**
-     * Handles input from the new hex code field.
+     * Handles input from the hex code field.
      * Validates the hex code and updates the current color if valid.
      * @param {Event} event - The input event.
      */
@@ -1677,7 +2117,7 @@
     function selectColor(color) {
       currentColor = color;
       document.getElementById('colorPicker').value = color;
-      document.getElementById('hexInput').value = color; // Update the new hex input field
+      document.getElementById('hexInput').value = color;
       
       document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
       const colorBtn = document.querySelector(`[onclick="selectColor('${color}')"]`);
@@ -2031,8 +2471,8 @@
     function saveProject() {
       try {
         const projectData = {
-          version: '2.1',
-          app: 'Silly Paintings Painting World',
+          version: '2.2',
+          app: 'Silly Paintings Painting World (Enhanced)',
           timestamp: new Date().toISOString(),
           layers: [],
           settings: {
@@ -2048,6 +2488,9 @@
               hardness: currentHardness,
               type: currentBrushType,
               tool: currentTool
+            },
+            calligraphySettings: {
+              font: currentCalligraphyFont
             }
           }
         };
@@ -2064,14 +2507,14 @@
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        const exportFileDefaultName = `silly_painting_${timestamp}.json`;
+        const exportFileDefaultName = `silly_painting_enhanced_${timestamp}.json`;
         
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
         linkElement.setAttribute('download', exportFileDefaultName);
         linkElement.click();
         
-        showToolMessage('💾 Silly painting saved successfully!');
+        showToolMessage('💾 Enhanced silly painting saved successfully!');
         
       } catch (error) {
         showToolMessage('❌ Error saving project: ' + error.message);
@@ -2159,12 +2602,17 @@
             }
           }
           
+          // Restore calligraphy settings
+          if (projectData.settings?.calligraphySettings?.font) {
+            setCalligraphyFont(projectData.settings.calligraphySettings.font);
+          }
+          
           setActiveLayer(currentLayerIndex);
           updateLayersPanel();
           
           event.target.value = '';
           
-          showToolMessage('📂 Silly painting loaded successfully!');
+          showToolMessage('📂 Enhanced silly painting loaded successfully!');
           
         } catch (error) {
           showToolMessage('❌ Error loading project: ' + error.message);
@@ -2195,13 +2643,13 @@
         const image = mergedCanvas.toDataURL('image/png');
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        link.download = `silly_masterpiece_${timestamp}.png`;
+        link.download = `silly_masterpiece_enhanced_${timestamp}.png`;
         link.href = image;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        showToolMessage('📷 Silly artwork exported successfully! 🎉');
+        showToolMessage('📷 Enhanced silly artwork exported successfully! 🎉');
         
       } catch (error) {
         showToolMessage('❌ Error exporting image: ' + error.message);
@@ -2260,7 +2708,7 @@
           // Add sparkle effect
           createSparkles();
           
-          showToolMessage('🌈 You found the silly rainbow mode! Keep creating amazing silly art! ✨');
+          showToolMessage('🌈 You found the silly rainbow mode! Keep creating amazing silly art with new tools! ✨');
           
           setTimeout(() => {
             clickCount = 0;
@@ -2333,8 +2781,8 @@
     function autoSave() {
       try {
         const projectData = {
-          version: '2.1',
-          app: 'Silly Paintings Painting World',
+          version: '2.2',
+          app: 'Silly Paintings Painting World (Enhanced)',
           timestamp: new Date().toISOString(),
           layers: [],
           settings: {
@@ -2350,6 +2798,9 @@
               hardness: currentHardness,
               type: currentBrushType,
               tool: currentTool
+            },
+            calligraphySettings: {
+              font: currentCalligraphyFont
             }
           }
         };
@@ -2363,7 +2814,7 @@
         });
 
         autoSaveData = projectData; // Store in memory
-        console.log('Auto-saved project data to memory.');
+        console.log('Auto-saved enhanced project data to memory.');
 
       } catch (error) {
         console.error('Auto-save failed:', error.message);
