@@ -811,6 +811,23 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    
+    /* Auto-save status message */
+    #autosave-status {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1001;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
 
     /* File input styling */
     .file-input {
@@ -1015,14 +1032,12 @@
         </div>
         <input type="color" id="colorPicker" value="#000000" onchange="selectColor(this.value)">
         
-        <!-- Hex Code Input Field -->
         <div class="hex-input-container">
-            <label for="hexInput">Hex Code:</label>
-            <input type="text" id="hexInput" placeholder="#000000" oninput="handleHexInput(event)">
+          <label for="hexInput">Hex Code:</label>
+          <input type="text" id="hexInput" placeholder="#000000" oninput="handleHexInput(event)">
         </div>
       </div>
 
-      <!-- New Calligraphy Section -->
       <div class="sidebar-section" id="calligraphySection" style="display: none;">
         <div class="sidebar-title">✒️ Calligraphy</div>
         <div class="calligraphy-section">
@@ -1039,7 +1054,6 @@
         </div>
       </div>
 
-      <!-- New Image Section -->
       <div class="sidebar-section" id="imageSection" style="display: none;">
         <div class="sidebar-title">🖼️ Images</div>
         <div class="image-section">
@@ -1059,7 +1073,6 @@
           <div class="size-display" id="sizeDisplay">15px</div>
         </div>
         
-        <!-- Tiny Brush Section -->
         <div class="tiny-brush-section">
           <div class="tiny-brush-title">🔬 Tiny Brushes</div>
           <div class="tiny-brush-grid">
@@ -1135,6 +1148,8 @@
     <button class="action-btn redo" onclick="redoAction()" title="Redo Last Action">↷ Redo</button>
     <button class="action-btn clear" onclick="clearCurrentLayer()" title="Clear Current Layer">🧼 Clear Layer</button>
   </div>
+  
+  <div id="autosave-status"></div>
 
   <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileLoad(event)">
   <input type="file" id="imageFileInput" class="file-input" accept="image/*" onchange="handleImageFileLoad(event)">
@@ -1164,6 +1179,8 @@
     const CANVAS_WIDTH = 1400;
     const CANVAS_HEIGHT = 900;
     const MAX_LAYERS = 10;
+    const AUTOSAVE_INTERVAL = 60000; // 1 minute in milliseconds
+    const LOCAL_STORAGE_KEY = 'silly_paintings_autosave';
 
     // Initialize the application
     document.addEventListener('DOMContentLoaded', function() {
@@ -1174,14 +1191,22 @@
     });
 
     function initializeApp() {
-      createInitialLayers();
+      // Check for and load auto-saved data first
+      loadAutoSavedProject();
+      
+      // If no auto-saved data, create initial layers
+      if (canvases.length === 0) {
+        createInitialLayers();
+      }
+
       setupCanvasContainer();
       updateLayersPanel();
       updateBrushPreview();
       setupEventListeners();
       showWelcomeMessage();
+      
       // Start auto-save
-      setInterval(autoSave, 30000); // Auto-save every 30 seconds
+      setInterval(autoSave, AUTOSAVE_INTERVAL);
     }
 
     function showWelcomeMessage() {
@@ -2533,85 +2558,7 @@
       reader.onload = function(e) {
         try {
           const projectData = JSON.parse(e.target.result);
-          
-          if (!projectData.layers || !Array.isArray(projectData.layers)) {
-            throw new Error('Invalid project file format');
-          }
-          
-          // Clear existing canvases
-          canvases.forEach(canvas => {
-            const canvasEl = canvas.lowerCanvasEl;
-            if (canvasEl && canvasEl.parentNode) {
-              canvasEl.parentNode.removeChild(canvasEl);
-            }
-          });
-          canvases = [];
-          
-          // Load project layers
-          projectData.layers.forEach((layerData, index) => {
-            createLayer(index);
-            const canvas = canvases[index];
-            
-            canvas.loadFromJSON(layerData.data, () => {
-              canvas.renderAll();
-              
-              if (layerData.visible === false) {
-                canvas.lowerCanvasEl.style.display = 'none';
-                canvas.upperCanvasEl.style.display = 'none';
-              }
-            });
-          });
-          
-          // Restore settings
-          currentLayerIndex = projectData.settings?.currentLayer || 0;
-          if (currentLayerIndex >= canvases.length) {
-            currentLayerIndex = 0;
-          }
-          
-          if (projectData.settings?.zoom) {
-            zoomLevel = projectData.settings.zoom;
-            updateZoom();
-          }
-          
-          // Restore brush settings if available
-          if (projectData.settings?.brushSettings) {
-            const brushSettings = projectData.settings.brushSettings;
-            
-            if (brushSettings.size !== undefined) {
-              currentSize = brushSettings.size;
-              document.getElementById('brushSize').value = currentSize;
-              updateBrushSize(currentSize);
-            }
-            
-            if (brushSettings.color) {
-              selectColor(brushSettings.color);
-            }
-            
-            if (brushSettings.opacity !== undefined) {
-              currentOpacity = brushSettings.opacity;
-              document.getElementById('brushOpacity').value = currentOpacity * 100;
-              updateOpacity(currentOpacity * 100);
-            }
-            
-            if (brushSettings.type) {
-              setBrushType(brushSettings.type);
-            }
-            
-            if (brushSettings.tool) {
-              setTool(brushSettings.tool);
-            }
-          }
-          
-          // Restore calligraphy settings
-          if (projectData.settings?.calligraphySettings?.font) {
-            setCalligraphyFont(projectData.settings.calligraphySettings.font);
-          }
-          
-          setActiveLayer(currentLayerIndex);
-          updateLayersPanel();
-          
-          event.target.value = '';
-          
+          loadCanvasData(projectData);
           showToolMessage('📂 Enhanced silly painting loaded successfully!');
           
         } catch (error) {
@@ -2620,6 +2567,87 @@
       };
       
       reader.readAsText(file);
+    }
+
+    // New function to load canvas data and settings from a JSON object
+    function loadCanvasData(projectData) {
+      if (!projectData.layers || !Array.isArray(projectData.layers)) {
+        throw new Error('Invalid project file format');
+      }
+
+      // Clear existing canvases
+      canvases.forEach(canvas => {
+        const canvasEl = canvas.lowerCanvasEl;
+        if (canvasEl && canvasEl.parentNode) {
+          canvasEl.parentNode.removeChild(canvasEl);
+        }
+      });
+      canvases = [];
+
+      // Load project layers
+      projectData.layers.forEach((layerData, index) => {
+        createLayer(index);
+        const canvas = canvases[index];
+        
+        canvas.loadFromJSON(layerData.data, () => {
+          canvas.renderAll();
+          
+          if (layerData.visible === false) {
+            canvas.lowerCanvasEl.style.display = 'none';
+            canvas.upperCanvasEl.style.display = 'none';
+          }
+        });
+      });
+      
+      // Restore settings
+      currentLayerIndex = projectData.settings?.currentLayer || 0;
+      if (currentLayerIndex >= canvases.length) {
+        currentLayerIndex = 0;
+      }
+      
+      if (projectData.settings?.zoom) {
+        zoomLevel = projectData.settings.zoom;
+        updateZoom();
+      }
+      
+      // Restore brush settings if available
+      if (projectData.settings?.brushSettings) {
+        const brushSettings = projectData.settings.brushSettings;
+        
+        if (brushSettings.size !== undefined) {
+          currentSize = brushSettings.size;
+          document.getElementById('brushSize').value = currentSize;
+          updateBrushSize(currentSize);
+        }
+        
+        if (brushSettings.color) {
+          selectColor(brushSettings.color);
+        }
+        
+        if (brushSettings.opacity !== undefined) {
+          currentOpacity = brushSettings.opacity;
+          document.getElementById('brushOpacity').value = currentOpacity * 100;
+          updateOpacity(currentOpacity * 100);
+        }
+        
+        if (brushSettings.type) {
+          setBrushType(brushSettings.type);
+        }
+        
+        if (brushSettings.tool) {
+          setTool(brushSettings.tool);
+        }
+      }
+      
+      // Restore calligraphy settings
+      if (projectData.settings?.calligraphySettings?.font) {
+        setCalligraphyFont(projectData.settings.calligraphySettings.font);
+      }
+      
+      setActiveLayer(currentLayerIndex);
+      updateLayersPanel();
+      
+      document.getElementById('fileInput').value = ''; // Clear file input
     }
     
     function exportPNG() {
@@ -2776,50 +2804,102 @@
       addEasterEggs();
     }, 2500);
 
-    // Auto-save functionality (in memory)
-    let autoSaveData = null;
+    // --- AUTOSAVE FUNCTIONALITY ---
+    
+    // Function to create the project data object from the current state
+    function createProjectDataObject() {
+      const projectData = {
+        version: '2.2',
+        app: 'Silly Paintings Painting World (Enhanced)',
+        timestamp: new Date().toISOString(),
+        layers: [],
+        settings: {
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          currentLayer: currentLayerIndex,
+          zoom: zoomLevel,
+          brushSettings: {
+            size: currentSize,
+            color: currentColor,
+            opacity: currentOpacity,
+            flow: currentFlow,
+            hardness: currentHardness,
+            type: currentBrushType,
+            tool: currentTool
+          },
+          calligraphySettings: {
+            font: currentCalligraphyFont
+          }
+        }
+      };
+
+      canvases.forEach((canvas, index) => {
+        projectData.layers.push({
+          index: index,
+          data: canvas.toJSON(),
+          visible: canvas.lowerCanvasEl.style.display !== 'none'
+        });
+      });
+      return projectData;
+    }
+
+    // Auto-save functionality (to localStorage)
     function autoSave() {
       try {
-        const projectData = {
-          version: '2.2',
-          app: 'Silly Paintings Painting World (Enhanced)',
-          timestamp: new Date().toISOString(),
-          layers: [],
-          settings: {
-            width: CANVAS_WIDTH,
-            height: CANVAS_HEIGHT,
-            currentLayer: currentLayerIndex,
-            zoom: zoomLevel,
-            brushSettings: {
-              size: currentSize,
-              color: currentColor,
-              opacity: currentOpacity,
-              flow: currentFlow,
-              hardness: currentHardness,
-              type: currentBrushType,
-              tool: currentTool
-            },
-            calligraphySettings: {
-              font: currentCalligraphyFont
-            }
-          }
-        };
-
-        canvases.forEach((canvas, index) => {
-          projectData.layers.push({
-            index: index,
-            data: canvas.toJSON(),
-            visible: canvas.lowerCanvasEl.style.display !== 'none'
-          });
-        });
-
-        autoSaveData = projectData; // Store in memory
-        console.log('Auto-saved enhanced project data to memory.');
-
+        const projectData = createProjectDataObject();
+        const dataStr = JSON.stringify(projectData);
+        localStorage.setItem(LOCAL_STORAGE_KEY, dataStr);
+        showAutoSaveStatus('🎨 Autosaved successfully!');
       } catch (error) {
         console.error('Auto-save failed:', error.message);
+        showAutoSaveStatus('❌ Autosave failed!');
       }
     }
+
+    // Function to load auto-saved project from localStorage
+    function loadAutoSavedProject() {
+      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedData) {
+        const projectData = JSON.parse(savedData);
+        if (projectData && projectData.layers && Array.isArray(projectData.layers) && projectData.layers.length > 0) {
+          // A saved project exists. Ask the user if they want to restore it.
+          const restore = confirm('An auto-saved project was found. Would you like to restore it?');
+          if (restore) {
+            try {
+              loadCanvasData(projectData);
+              showToolMessage('💾 Restored auto-saved project!');
+            } catch (error) {
+              console.error('Failed to restore auto-saved project:', error.message);
+              showToolMessage('❌ Failed to restore auto-saved project.');
+              createInitialLayers(); // Fallback to creating a new project
+            }
+          } else {
+            // User chose not to restore, so create a new project.
+            createInitialLayers();
+          }
+        } else {
+          // Auto-save data is invalid or empty, so create a new project.
+          createInitialLayers();
+        }
+      } else {
+        // No auto-save data found, so create a new project.
+        createInitialLayers();
+      }
+    }
+    
+    // Function to show a temporary auto-save status message
+    function showAutoSaveStatus(message) {
+      const statusEl = document.getElementById('autosave-status');
+      if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.style.opacity = '1';
+        setTimeout(() => {
+          statusEl.style.opacity = '0';
+        }, 3000);
+      }
+    }
+    
   </script>
 </body>
 </html>
+
