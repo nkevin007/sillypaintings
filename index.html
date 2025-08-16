@@ -231,6 +231,57 @@
       text-align: center;
     }
 
+    /* Picture Manipulation Section */
+    .picture-section {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 165, 0, 0.2));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .picture-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .picture-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .picture-btn {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.5), rgba(255, 165, 0, 0.3));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      padding: 10px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-align: center;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .picture-btn:hover {
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.7), rgba(255, 165, 0, 0.5));
+      transform: scale(1.05);
+      border-color: #FFD700;
+    }
+
+    .picture-btn.active {
+      border-color: #FFD700;
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.8), rgba(255, 165, 0, 0.6));
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+
     /* Color Picker Section - Bigger colors */
     .color-grid {
       display: grid;
@@ -764,6 +815,10 @@
       cursor: copy !important;
     }
 
+    .move-cursor {
+      cursor: move !important;
+    }
+
     /* Tool size indicator - Enhanced */
     .size-indicator {
       position: fixed;
@@ -952,6 +1007,21 @@
     .great-vibes { font-family: 'Great Vibes', cursive; }
     .kalam { font-family: 'Kalam', cursive; }
     .pacifico { font-family: 'Pacifico', cursive; }
+
+    /* Picture manipulation highlight */
+    .picture-highlight {
+      position: absolute !important;
+      border: 3px dashed #FFD700 !important;
+      background: rgba(255, 215, 0, 0.1) !important;
+      z-index: 1000 !important;
+      pointer-events: none !important;
+    }
+
+    /* Group selection indicator */
+    .group-selection {
+      border: 4px solid #FFD700 !important;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
+    }
   </style>
 </head>
 <body>
@@ -991,6 +1061,9 @@
       <button class="tool-btn" onclick="setTool('image')" title="Insert Image" id="image-tool">
         🖼️
       </button>
+      <button class="tool-btn" onclick="setTool('move')" title="Move/Select Pictures" id="move-tool">
+        ↔️
+      </button>
       <button class="tool-btn" onclick="setTool('eraser')" title="Eraser Tool" id="eraser-tool">
         🧹
       </button>
@@ -1003,9 +1076,6 @@
       <button class="tool-btn" onclick="setTool('marker')" title="Marker Tool" id="marker-tool">
         🖍️
       </button>
-      <button class="tool-btn" onclick="setTool('smudge')" title="Smudge Tool" id="smudge-tool">
-        👆
-      </button>
     </div>
 
     <div class="canvas-area">
@@ -1014,6 +1084,45 @@
     </div>
 
     <div class="right-sidebar">
+      <div class="sidebar-section" id="pictureSection" style="display: none;">
+        <div class="sidebar-title">🎬 Picture Animation</div>
+        <div class="picture-section">
+          <div class="picture-title">📐 Picture Tools</div>
+          <div class="picture-controls">
+            <button class="picture-btn" onclick="groupAllObjects()" id="group-btn">📦 Group All</button>
+            <button class="picture-btn" onclick="ungroupSelected()" id="ungroup-btn">📂 Ungroup</button>
+            <button class="picture-btn" onclick="duplicatePicture()" id="duplicate-btn">📋 Duplicate</button>
+            <button class="picture-btn" onclick="flipPicture('horizontal')" id="flip-h-btn">↔️ Flip H</button>
+            <button class="picture-btn" onclick="flipPicture('vertical')" id="flip-v-btn">↕️ Flip V</button>
+            <button class="picture-btn" onclick="rotatePicture()" id="rotate-btn">🔄 Rotate</button>
+          </div>
+          
+          <div class="slider-container">
+            <div class="slider-label">
+              <span>📏 Picture Size</span>
+              <span id="pictureScaleValue">100%</span>
+            </div>
+            <input type="range" class="slider" id="pictureScale" min="10" max="500" step="5" value="100" oninput="scalePicture(this.value)">
+          </div>
+          
+          <div class="slider-container">
+            <div class="slider-label">
+              <span>🔄 Rotation</span>
+              <span id="pictureRotationValue">0°</span>
+            </div>
+            <input type="range" class="slider" id="pictureRotation" min="0" max="360" step="1" value="0" oninput="rotatePictureSlider(this.value)">
+          </div>
+          
+          <div class="slider-container">
+            <div class="slider-label">
+              <span>👻 Transparency</span>
+              <span id="pictureOpacityValue">100%</span>
+            </div>
+            <input type="range" class="slider" id="pictureOpacity" min="10" max="100" step="5" value="100" oninput="changePictureOpacity(this.value)">
+          </div>
+        </div>
+      </div>
+
       <div class="sidebar-section">
         <div class="sidebar-title">🌈 Colors</div>
         <div class="color-grid">
@@ -1175,6 +1284,12 @@
     let currentCalligraphyFont = 'Dancing Script';
     let isImageMode = false;
     
+    // Picture manipulation variables
+    let selectedObjects = [];
+    let currentGroup = null;
+    let isMovingPicture = false;
+    let lastSelectedGroup = null;
+    
     // Canvas settings - Maximized for students
     const CANVAS_WIDTH = 1400;
     const CANVAS_HEIGHT = 900;
@@ -1211,7 +1326,7 @@
 
     function showWelcomeMessage() {
       setTimeout(() => {
-        alert('🎨 Welcome to Silly Paintings Painting World! 🎨\n\n✨ NEW Features:\n• ✒️ Beautiful calligraphy fonts for elegant text\n• 🖼️ Insert images from files, URLs, or emojis\n• 📝 Advanced text editing capabilities\n\n💡 Tips for amazing silly art:\n• Use [/] keys to change brush size quickly\n• Try the new TINY brushes for super detailed work!\n• Use different brush types for cool effects\n• Use layers to organize your silly artwork\n• Don\'t forget to save your masterpiece!\n\nHappy silly painting! 🌈');
+        alert('🎨 Welcome to Silly Paintings Painting World! 🎨\n\n✨ NEW Animation Features:\n• ↔️ Move Tool: Select and move entire pictures\n• 📦 Group drawings together for easy manipulation\n• 📏 Resize pictures with the scale slider\n• 🔄 Rotate pictures for dynamic animations\n• 👻 Adjust transparency for layered effects\n• 📋 Duplicate pictures for frame-by-frame animation\n\n🎬 Perfect for creating:\n• Animated characters\n• Moving objects\n• Frame-by-frame animations\n• Dynamic compositions\n\n💡 Animation Tips:\n• Draw a character, group it, then duplicate and move\n• Use layers for different animation frames\n• Adjust transparency to see previous frames\n• Save frequently to preserve your animation work!\n\nHappy animating! 🌈✨');
       }, 1000);
     }
 
@@ -1246,6 +1361,24 @@
               e.preventDefault();
               saveProject();
               break;
+            case 'a':
+              e.preventDefault();
+              if (currentTool === 'move') {
+                selectAllObjects();
+              }
+              break;
+            case 'g':
+              e.preventDefault();
+              if (currentTool === 'move') {
+                groupAllObjects();
+              }
+              break;
+            case 'd':
+              e.preventDefault();
+              if (currentTool === 'move') {
+                duplicatePicture();
+              }
+              break;
             case '=':
             case '+':
               e.preventDefault();
@@ -1276,7 +1409,7 @@
             if (!e.ctrlKey && !e.metaKey) setTool('spray');
             break;
           case 'm':
-            setTool('marker');
+            setTool('move');
             break;
           case 't':
             setTool('text');
@@ -1286,6 +1419,11 @@
             break;
           case 'i':
             setTool('image');
+            break;
+          case 'v':
+            if (currentTool === 'move') {
+              setTool('brush'); // Toggle back to drawing
+            }
             break;
           case '1':
           case '2':
@@ -1328,6 +1466,13 @@
             if (e.ctrlKey) {
               e.preventDefault();
               clearCurrentLayer();
+            } else if (currentTool === 'move') {
+              deleteSelectedObjects();
+            }
+            break;
+          case 'Escape':
+            if (currentTool === 'move') {
+              clearSelection();
             }
             break;
         }
@@ -1422,8 +1567,8 @@
       fabricCanvas.isDrawingMode = false;
       
       // Enhanced drawing precision for tiny brushes
-      fabricCanvas.selection = false;
-      fabricCanvas.skipTargetFind = false; // Allow object selection
+      fabricCanvas.selection = true;
+      fabricCanvas.skipTargetFind = false;
       
       // Add drawing event listeners for undo/redo
       fabricCanvas.on('path:created', function() {
@@ -1433,6 +1578,26 @@
       // Add object modification listener
       fabricCanvas.on('object:modified', function() {
         saveState();
+        updatePictureControls();
+      });
+
+      // Selection events for picture manipulation
+      fabricCanvas.on('selection:created', function(e) {
+        if (currentTool === 'move') {
+          handleObjectSelection(e);
+        }
+      });
+
+      fabricCanvas.on('selection:updated', function(e) {
+        if (currentTool === 'move') {
+          handleObjectSelection(e);
+        }
+      });
+
+      fabricCanvas.on('selection:cleared', function(e) {
+        if (currentTool === 'move') {
+          clearPictureSelection();
+        }
       });
 
       // Add fill tool click handler
@@ -1475,6 +1640,307 @@
       });
       
       canvas.setZoom(scale * zoomLevel);
+    }
+
+    // Picture Manipulation Functions
+    function handleObjectSelection(e) {
+      selectedObjects = e.selected || [];
+      updatePictureControls();
+      showToolMessage(`🎯 Selected ${selectedObjects.length} object(s) for animation!`);
+    }
+
+    function clearPictureSelection() {
+      selectedObjects = [];
+      currentGroup = null;
+      updatePictureControls();
+    }
+
+    function updatePictureControls() {
+      if (selectedObjects.length > 0 && currentTool === 'move') {
+        const activeCanvas = canvases[currentLayerIndex];
+        const selectedObj = activeCanvas.getActiveObject();
+        
+        if (selectedObj) {
+          // Update sliders based on selected object
+          const scaleX = selectedObj.scaleX || 1;
+          const scaleY = selectedObj.scaleY || 1;
+          const avgScale = (scaleX + scaleY) / 2;
+          const scalePercent = Math.round(avgScale * 100);
+          
+          document.getElementById('pictureScale').value = scalePercent;
+          document.getElementById('pictureScaleValue').textContent = scalePercent + '%';
+          
+          const angle = selectedObj.angle || 0;
+          document.getElementById('pictureRotation').value = Math.round(angle);
+          document.getElementById('pictureRotationValue').textContent = Math.round(angle) + '°';
+          
+          const opacity = (selectedObj.opacity || 1) * 100;
+          document.getElementById('pictureOpacity').value = Math.round(opacity);
+          document.getElementById('pictureOpacityValue').textContent = Math.round(opacity) + '%';
+        }
+      }
+    }
+
+    function groupAllObjects() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const objects = activeCanvas.getObjects();
+      
+      if (objects.length < 2) {
+        showToolMessage('🚫 Need at least 2 objects to group!');
+        return;
+      }
+      
+      // Select all objects
+      const selection = new fabric.ActiveSelection(objects, {
+        canvas: activeCanvas,
+      });
+      
+      activeCanvas.setActiveObject(selection);
+      
+      // Group them
+      const group = selection.toGroup();
+      group.set({
+        selectable: true,
+        evented: true,
+        lockMovementX: false,
+        lockMovementY: false
+      });
+      
+      activeCanvas.renderAll();
+      currentGroup = group;
+      selectedObjects = [group];
+      updatePictureControls();
+      saveState();
+      
+      showToolMessage('📦 All objects grouped! Perfect for animation! ✨');
+    }
+
+    function ungroupSelected() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj || activeObj.type !== 'group') {
+        showToolMessage('🚫 Please select a group to ungroup!');
+        return;
+      }
+      
+      // Ungroup the selected group
+      const items = activeObj.toActiveSelection();
+      activeCanvas.renderAll();
+      
+      selectedObjects = [];
+      currentGroup = null;
+      saveState();
+      
+      showToolMessage('📂 Group ungrouped successfully!');
+    }
+
+    function duplicatePicture() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('🚫 Please select an object or group to duplicate!');
+        return;
+      }
+      
+      activeObj.clone(function(cloned) {
+        cloned.set({
+          left: cloned.left + 20,
+          top: cloned.top + 20,
+          evented: true,
+          selectable: true
+        });
+        
+        if (cloned.type === 'activeSelection') {
+          // Handle active selection
+          cloned.canvas = activeCanvas;
+          cloned.forEachObject(function(obj) {
+            activeCanvas.add(obj);
+          });
+          cloned.setCoords();
+        } else {
+          activeCanvas.add(cloned);
+        }
+        
+        activeCanvas.setActiveObject(cloned);
+        activeCanvas.renderAll();
+        
+        selectedObjects = [cloned];
+        updatePictureControls();
+        saveState();
+        
+        showToolMessage('📋 Picture duplicated! Perfect for animation frames! ✨');
+      });
+    }
+
+    function scalePicture(scalePercent) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('🚫 Please select an object to scale!');
+        return;
+      }
+      
+      const scale = scalePercent / 100;
+      activeObj.set({
+        scaleX: scale,
+        scaleY: scale
+      });
+      
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureScaleValue').textContent = scalePercent + '%';
+      
+      if (scalePercent !== 100) {
+        showToolMessage(`📏 Picture scaled to ${scalePercent}%!`);
+      }
+    }
+
+    function rotatePictureSlider(angle) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('🚫 Please select an object to rotate!');
+        return;
+      }
+      
+      activeObj.set({ angle: parseInt(angle) });
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureRotationValue').textContent = angle + '°';
+      
+      if (angle != 0) {
+        showToolMessage(`🔄 Picture rotated to ${angle}°!`);
+      }
+    }
+
+    function rotatePicture() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('🚫 Please select an object to rotate!');
+        return;
+      }
+      
+      const currentAngle = activeObj.angle || 0;
+      const newAngle = (currentAngle + 90) % 360;
+      
+      activeObj.set({ angle: newAngle });
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureRotation').value = newAngle;
+      document.getElementById('pictureRotationValue').textContent = newAngle + '°';
+      
+      showToolMessage(`🔄 Picture rotated 90°! Now at ${newAngle}°`);
+    }
+
+    function flipPicture(direction) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage(`🚫 Please select an object to flip ${direction}!`);
+        return;
+      }
+      
+      if (direction === 'horizontal') {
+        activeObj.set({ flipX: !activeObj.flipX });
+        showToolMessage('↔️ Picture flipped horizontally!');
+      } else if (direction === 'vertical') {
+        activeObj.set({ flipY: !activeObj.flipY });
+        showToolMessage('↕️ Picture flipped vertically!');
+      }
+      
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      saveState();
+    }
+
+    function changePictureOpacity(opacityPercent) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('🚫 Please select an object to change opacity!');
+        return;
+      }
+      
+      const opacity = opacityPercent / 100;
+      activeObj.set({ opacity: opacity });
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureOpacityValue').textContent = opacityPercent + '%';
+      
+      if (opacityPercent !== 100) {
+        showToolMessage(`👻 Picture opacity set to ${opacityPercent}%!`);
+      }
+    }
+
+    function selectAllObjects() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const objects = activeCanvas.getObjects();
+      
+      if (objects.length === 0) {
+        showToolMessage('🚫 No objects to select!');
+        return;
+      }
+      
+      const selection = new fabric.ActiveSelection(objects, {
+        canvas: activeCanvas,
+      });
+      
+      activeCanvas.setActiveObject(selection);
+      activeCanvas.renderAll();
+      
+      selectedObjects = objects;
+      showToolMessage(`🎯 Selected all ${objects.length} objects!`);
+    }
+
+    function deleteSelectedObjects() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('🚫 No objects selected to delete!');
+        return;
+      }
+      
+      if (activeObj.type === 'activeSelection') {
+        // Delete multiple selected objects
+        activeObj.forEachObject(function(obj) {
+          activeCanvas.remove(obj);
+        });
+      } else {
+        // Delete single object
+        activeCanvas.remove(activeObj);
+      }
+      
+      activeCanvas.discardActiveObject();
+      activeCanvas.renderAll();
+      
+      selectedObjects = [];
+      currentGroup = null;
+      saveState();
+      
+      showToolMessage('🗑️ Selected objects deleted!');
+    }
+
+    function clearSelection() {
+      const activeCanvas = canvases[currentLayerIndex];
+      activeCanvas.discardActiveObject();
+      activeCanvas.renderAll();
+      
+      selectedObjects = [];
+      currentGroup = null;
+      
+      showToolMessage('✨ Selection cleared!');
     }
 
     // Enhanced Tiny Brush Function
@@ -1524,12 +1990,14 @@
       // Show/hide relevant sections
       document.getElementById('calligraphySection').style.display = tool === 'calligraphy' ? 'block' : 'none';
       document.getElementById('imageSection').style.display = tool === 'image' ? 'block' : 'none';
+      document.getElementById('pictureSection').style.display = tool === 'move' ? 'block' : 'none';
       
       updateCurrentCanvas();
       updateCursor();
       
-      // Clear tiny brush selection when switching tools
-      if (tool !== 'brush' && tool !== 'paintbrush' && tool !== 'pencil' && tool !== 'calligraphy') {
+      // Clear selections when switching away from move tool
+      if (tool !== 'move') {
+        clearSelection();
         clearTinyBrushSelection();
       }
       
@@ -1550,11 +2018,11 @@
         'calligraphy': '✒️ Calligraphy Tool',
         'text': '📝 Text Tool',
         'image': '🖼️ Image Tool',
+        'move': '↔️ Move/Animation Tool',
         'eraser': '🧹 Eraser Tool',
         'fill': '🪣 Fill Bucket',
         'spray': '💨 Spray Paint',
-        'marker': '🖍️ Marker Tool',
-        'smudge': '👆 Smudge Tool'
+        'marker': '🖍️ Marker Tool'
       };
       
       // Create temporary feedback element
@@ -1591,7 +2059,7 @@
       const container = document.getElementById('canvas-container');
       
       // Remove all cursor classes
-      container.classList.remove('fill-cursor', 'eraser-cursor', 'text-cursor', 'image-cursor');
+      container.classList.remove('fill-cursor', 'eraser-cursor', 'text-cursor', 'image-cursor', 'move-cursor');
       
       switch (currentTool) {
         case 'fill':
@@ -1607,6 +2075,9 @@
         case 'image':
           container.classList.add('image-cursor');
           break;
+        case 'move':
+          container.classList.add('move-cursor');
+          break;
         default:
           container.style.cursor = 'crosshair';
       }
@@ -1620,20 +2091,32 @@
       let actualBrushSize = currentSize;
       
       switch (currentTool) {
+        case 'move':
+          activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = true;
+          activeCanvas.forEachObject(function(obj) {
+            obj.selectable = true;
+            obj.evented = true;
+          });
+          break;
+          
         case 'brush':
           activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
           setupBrushSettings(activeCanvas);
           break;
           
         case 'paintbrush':
           activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
           activeCanvas.freeDrawingBrush = createAdvancedBrush(activeCanvas);
           setupPaintBrushSettings(activeCanvas);
           break;
           
         case 'pencil':
           activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
           // Enhanced for tiny sizes
           if (currentSize < 1) {
@@ -1648,6 +2131,7 @@
           
         case 'calligraphy':
           activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
           // Calligraphy brush settings
           actualBrushSize = currentSize < 1 ? currentSize * 2 : currentSize * 1.5;
@@ -1660,10 +2144,12 @@
         case 'text':
         case 'image':
           activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = false;
           break;
           
         case 'eraser':
           activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
           activeCanvas.freeDrawingBrush = new fabric.EraserBrush(activeCanvas);
           // Enhanced eraser sizing
           if (currentSize < 1) {
@@ -1676,10 +2162,12 @@
           
         case 'fill':
           activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = false;
           break;
           
         case 'spray':
           activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
           if (fabric.SprayBrush) {
             activeCanvas.freeDrawingBrush = new fabric.SprayBrush(activeCanvas);
             activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 3 : currentSize * 1.8;
@@ -1694,18 +2182,15 @@
           
         case 'marker':
           activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
           activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
           activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 2 : currentSize * 1.4;
           activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, 0.75 * currentOpacity);
           break;
           
-        case 'smudge':
-          activeCanvas.isDrawingMode = false;
-          showToolMessage('🎨 Smudge tool coming in next update! Try the soft brush for similar effects! ✨');
-          break;
-          
         default:
           activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = false;
       }
     }
 
@@ -2114,11 +2599,6 @@
       return hex;
     }
     
-    /**
-     * Handles input from the hex code field.
-     * Validates the hex code and updates the current color if valid.
-     * @param {Event} event - The input event.
-     */
     function handleHexInput(event) {
         const hex = event.target.value;
         const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
@@ -2496,8 +2976,8 @@
     function saveProject() {
       try {
         const projectData = {
-          version: '2.2',
-          app: 'Silly Paintings Painting World (Enhanced)',
+          version: '2.3',
+          app: 'Silly Paintings Painting World (Enhanced with Animation)',
           timestamp: new Date().toISOString(),
           layers: [],
           settings: {
@@ -2532,14 +3012,14 @@
         const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
         
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        const exportFileDefaultName = `silly_painting_enhanced_${timestamp}.json`;
+        const exportFileDefaultName = `silly_painting_animation_${timestamp}.json`;
         
         const linkElement = document.createElement('a');
         linkElement.setAttribute('href', dataUri);
         linkElement.setAttribute('download', exportFileDefaultName);
         linkElement.click();
         
-        showToolMessage('💾 Enhanced silly painting saved successfully!');
+        showToolMessage('💾 Enhanced silly painting with animation features saved!');
         
       } catch (error) {
         showToolMessage('❌ Error saving project: ' + error.message);
@@ -2559,7 +3039,7 @@
         try {
           const projectData = JSON.parse(e.target.result);
           loadCanvasData(projectData);
-          showToolMessage('📂 Enhanced silly painting loaded successfully!');
+          showToolMessage('📂 Enhanced silly painting with animation loaded!');
           
         } catch (error) {
           showToolMessage('❌ Error loading project: ' + error.message);
@@ -2569,7 +3049,6 @@
       reader.readAsText(file);
     }
 
-    // New function to load canvas data and settings from a JSON object
     function loadCanvasData(projectData) {
       if (!projectData.layers || !Array.isArray(projectData.layers)) {
         throw new Error('Invalid project file format');
@@ -2671,13 +3150,13 @@
         const image = mergedCanvas.toDataURL('image/png');
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        link.download = `silly_masterpiece_enhanced_${timestamp}.png`;
+        link.download = `silly_masterpiece_animation_${timestamp}.png`;
         link.href = image;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        showToolMessage('📷 Enhanced silly artwork exported successfully! 🎉');
+        showToolMessage('📷 Enhanced silly artwork with animation exported! 🎉');
         
       } catch (error) {
         showToolMessage('❌ Error exporting image: ' + error.message);
@@ -2736,7 +3215,7 @@
           // Add sparkle effect
           createSparkles();
           
-          showToolMessage('🌈 You found the silly rainbow mode! Keep creating amazing silly art with new tools! ✨');
+          showToolMessage('🌈 You found the silly rainbow mode! Now with ANIMATION POWERS! ✨🎬');
           
           setTimeout(() => {
             clickCount = 0;
@@ -2747,7 +3226,7 @@
             this.style.animation = '';
           }, 8000);
         } else if (clickCount === 3) {
-          showToolMessage('🎯 Almost there! Click 2 more times for a silly surprise! ✨');
+          showToolMessage('🎯 Almost there! Click 2 more times for animation magic! ✨🎬');
         }
       });
     }
@@ -2806,11 +3285,10 @@
 
     // --- AUTOSAVE FUNCTIONALITY ---
     
-    // Function to create the project data object from the current state
     function createProjectDataObject() {
       const projectData = {
-        version: '2.2',
-        app: 'Silly Paintings Painting World (Enhanced)',
+        version: '2.3',
+        app: 'Silly Paintings Painting World (Enhanced with Animation)',
         timestamp: new Date().toISOString(),
         layers: [],
         settings: {
@@ -2849,7 +3327,7 @@
         const projectData = createProjectDataObject();
         const dataStr = JSON.stringify(projectData);
         localStorage.setItem(LOCAL_STORAGE_KEY, dataStr);
-        showAutoSaveStatus('🎨 Autosaved successfully!');
+        showAutoSaveStatus('🎨 Autosaved with animation features!');
       } catch (error) {
         console.error('Auto-save failed:', error.message);
         showAutoSaveStatus('❌ Autosave failed!');
@@ -2867,7 +3345,7 @@
           if (restore) {
             try {
               loadCanvasData(projectData);
-              showToolMessage('💾 Restored auto-saved project!');
+              showToolMessage('💾 Restored auto-saved animation project!');
             } catch (error) {
               console.error('Failed to restore auto-saved project:', error.message);
               showToolMessage('❌ Failed to restore auto-saved project.');
@@ -2902,4 +3380,3 @@
   </script>
 </body>
 </html>
-
