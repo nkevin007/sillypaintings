@@ -1,4 +1,2479 @@
-<!DOCTYPE html>
+function handleHexInput(event) {
+        const hex = event.target.value;
+        const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+        if (hexRegex.test(hex)) {
+            selectColor(hex);
+        }
+    }
+
+    // Brush type functions
+    function setBrushType(type) {
+      currentBrushType = type;
+      
+      document.querySelectorAll('.brush-type-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`${type}-brush`).classList.add('active');
+      
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    // Color functions
+    function selectColor(color) {
+      currentColor = color;
+      document.getElementById('colorPicker').value = color;
+      document.getElementById('hexInput').value = color;
+      
+      document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+      const colorBtn = document.querySelector(`[onclick="selectColor('${color}')"]`);
+      if (colorBtn) colorBtn.classList.add('active');
+      
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    // Enhanced Brush settings for tiny brushes
+    function updateBrushSize(size) {
+      currentSize = parseFloat(size);
+      
+      const tinyPresets = [0.1, 0.2, 0.3, 0.5, 0.7, 0.8];
+      if (!tinyPresets.includes(currentSize)) {
+        clearTinyBrushSelection();
+      }
+      
+      let displaySize = currentSize;
+      if (currentSize < 1) {
+        displaySize = currentSize.toFixed(1) + 'px';
+      } else if (currentSize < 10) {
+        displaySize = currentSize.toFixed(1);
+      } else {
+        displaySize = Math.round(currentSize);
+      }
+      
+      document.getElementById('sizeValue').textContent = displaySize;
+      document.getElementById('sizeDisplay').textContent = displaySize;
+      
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    function updateOpacity(opacity) {
+      currentOpacity = opacity / 100;
+      document.getElementById('opacityValue').textContent = opacity + '%';
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    function updateFlow(flow) {
+      currentFlow = flow / 100;
+      document.getElementById('flowValue').textContent = flow + '%';
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    function updateHardness(hardness) {
+      currentHardness = hardness / 100;
+      document.getElementById('hardnessValue').textContent = hardness + '%';
+      updateCurrentCanvas();
+      updateBrushPreview();
+    }
+
+    function updateBrushPreview() {
+      const preview = document.getElementById('brushPreview');
+      
+      let previewSize;
+      if (currentSize < 1) {
+        previewSize = Math.max(2, currentSize * 20);
+      } else {
+        previewSize = Math.max(3, currentSize / 4);
+      }
+      
+      preview.style.width = previewSize + 'px';
+      preview.style.height = previewSize + 'px';
+      preview.style.backgroundColor = currentColor;
+      preview.style.opacity = currentOpacity * currentFlow;
+      
+      switch (currentBrushType) {
+        case 'soft':
+          const blurAmount = currentSize < 1 ? Math.max(0.5, previewSize * 0.2) : Math.max(1, previewSize * 0.4 * (1 - currentHardness));
+          preview.style.filter = `blur(${blurAmount}px)`;
+          preview.style.boxShadow = `0 0 ${blurAmount * 3}px ${currentColor}`;
+          break;
+        case 'hard':
+          preview.style.filter = 'none';
+          preview.style.boxShadow = 'none';
+          preview.style.borderRadius = currentSize < 1 ? '50%' : '3px';
+          break;
+        case 'texture':
+          preview.style.filter = 'none';
+          preview.style.boxShadow = `inset 0 0 ${previewSize}px rgba(0,0,0,0.4)`;
+          preview.style.background = `linear-gradient(45deg, ${currentColor}, ${currentColor}dd)`;
+          break;
+        default:
+          const softBlur = currentSize < 1 ? Math.max(0.2, previewSize * 0.1) : Math.max(0.5, previewSize * 0.15 * (1 - currentHardness));
+          preview.style.filter = `blur(${softBlur}px)`;
+          preview.style.boxShadow = `0 0 ${softBlur * 6}px ${currentColor}66`;
+          preview.style.borderRadius = '50%';
+      }
+      
+      if (currentSize < 1) {
+        preview.style.border = '2px solid #00ff00';
+        preview.style.animation = 'tinyGlow 2s ease-in-out infinite alternate';
+      } else {
+        preview.style.border = 'none';
+        preview.style.animation = 'none';
+      }
+      
+      updatePressureIndicator();
+    }
+
+    const tinyGlowStyle = document.createElement('style');
+    tinyGlowStyle.textContent = `
+      @keyframes tinyGlow {
+        from { box-shadow: 0 0 5px #00ff00, inset 0 0 5px rgba(0, 255, 0, 0.2); }
+        to { box-shadow: 0 0 15px #00ff00, inset 0 0 10px rgba(0, 255, 0, 0.4); }
+      }
+    `;
+    document.head.appendChild(tinyGlowStyle);
+
+    function updatePressureIndicator() {
+      const pressureBar = document.getElementById('pressureBar');
+      if (pressureBar) {
+        pressureBar.style.width = (pressureSimulation * 100) + '%';
+      }
+    }
+
+    function simulatePressureChange() {
+      pressureSimulation = 0.4 + Math.random() * 0.6;
+      updatePressureIndicator();
+      
+      if (currentTool === 'paintbrush' && canvases[currentLayerIndex]) {
+        updateCurrentCanvas();
+      }
+    }
+
+    setInterval(simulatePressureChange, 2500);
+
+    // Layer functions
+    function updateLayersPanel() {
+      const panel = document.getElementById('layersPanel');
+      panel.innerHTML = '';
+      
+      for (let i = canvases.length - 1; i >= 0; i--) {
+        const layerItem = document.createElement('div');
+        layerItem.className = `layer-item ${i === currentLayerIndex ? 'active' : ''}`;
+        layerItem.onclick = () => setActiveLayer(i);
+        
+        layerItem.innerHTML = `
+          <span>Layer ${i + 1}</span>
+          <div class="layer-controls">
+            <button class="layer-control-btn" onclick="event.stopPropagation(); toggleLayerVisibility(${i})" title="Toggle Visibility">👁️</button>
+            ${i > 0 ? `<button class="layer-control-btn" onclick="event.stopPropagation(); deleteLayer(${i})" title="Delete Layer">🗑️</button>` : ''}
+          </div>
+        `;
+        
+        panel.appendChild(layerItem);
+      }
+    }
+
+    function setActiveLayer(index) {
+      canvases.forEach(canvas => {
+        canvas.isDrawingMode = false;
+      });
+      
+      currentLayerIndex = index;
+      updateCurrentCanvas();
+      updateLayersPanel();
+      
+      showToolMessage(`Switched to Layer ${index + 1}`);
+    }
+
+    function addLayer() {
+      if (canvases.length >= MAX_LAYERS) {
+        showToolMessage('Maximum number of layers reached! Try combining some layers first.');
+        return;
+      }
+      
+      const newIndex = canvases.length;
+      createLayer(newIndex);
+      setActiveLayer(newIndex);
+      updateLayersPanel();
+      
+      showToolMessage(`New Layer ${newIndex + 1} created!`);
+    }
+
+    function deleteLayer(index) {
+      if (canvases.length <= 1) {
+        showToolMessage('Cannot delete the last layer! Create a new layer first.');
+        return;
+      }
+      
+      const canvasEl = document.getElementById(`canvas-${index}`);
+      if (canvasEl) {
+        canvasEl.remove();
+      }
+      
+      canvases.splice(index, 1);
+      
+      for (let i = index; i < canvases.length; i++) {
+        const canvas = canvases[i];
+        canvas.lowerCanvasEl.id = `canvas-${i}`;
+        canvas.lowerCanvasEl.style.zIndex = i;
+      }
+      
+      if (currentLayerIndex >= index) {
+        currentLayerIndex = Math.max(0, currentLayerIndex - 1);
+      }
+      
+      setActiveLayer(currentLayerIndex);
+      updateLayersPanel();
+      
+      showToolMessage('Layer deleted successfully!');
+    }
+
+    function toggleLayerVisibility(index) {
+      const canvas = canvases[index];
+      if (canvas) {
+        const isVisible = canvas.lowerCanvasEl.style.display !== 'none';
+        canvas.lowerCanvasEl.style.display = isVisible ? 'none' : 'block';
+        canvas.upperCanvasEl.style.display = isVisible ? 'none' : 'block';
+        
+        showToolMessage(isVisible ? 'Layer hidden' : 'Layer visible');
+      }
+    }
+
+    // Enhanced Zoom functions with tiny brush considerations
+    function zoomIn() {
+      zoomLevel = Math.min(zoomLevel * 1.25, 16.0);
+      updateZoom();
+      showToolMessage(`Zoomed in to ${Math.round(zoomLevel * 100)}%`);
+    }
+
+    function zoomOut() {
+      zoomLevel = Math.max(zoomLevel / 1.25, 0.1);
+      updateZoom();
+      showToolMessage(`Zoomed out to ${Math.round(zoomLevel * 100)}%`);
+    }
+
+    function updateZoom() {
+      document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+      canvases.forEach(canvas => {
+        resizeCanvas(canvas);
+      });
+    }
+
+    // Enhanced Undo/Redo system
+    function saveState() {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (activeCanvas) {
+        undoStack.push({
+          layerIndex: currentLayerIndex,
+          state: JSON.stringify(activeCanvas.toJSON())
+        });
+        
+        if (undoStack.length > 100) {
+          undoStack.shift();
+        }
+        
+        redoStack = [];
+      }
+    }
+
+    function undoAction() {
+      if (undoStack.length === 0) {
+        showToolMessage('Nothing to undo!');
+        return;
+      }
+      
+      const currentState = undoStack.pop();
+      const activeCanvas = canvases[currentState.layerIndex];
+      
+      if (activeCanvas) {
+        redoStack.push({
+          layerIndex: currentState.layerIndex,
+          state: JSON.stringify(activeCanvas.toJSON())
+        });
+        
+        activeCanvas.loadFromJSON(currentState.state, () => {
+          activeCanvas.renderAll();
+        });
+        
+        showToolMessage('Undid last action');
+      }
+    }
+
+    function redoAction() {
+      if (redoStack.length === 0) {
+        showToolMessage('Nothing to redo!');
+        return;
+      }
+      
+      const redoState = redoStack.pop();
+      const activeCanvas = canvases[redoState.layerIndex];
+      
+      if (activeCanvas) {
+        undoStack.push({
+          layerIndex: redoState.layerIndex,
+          state: JSON.stringify(activeCanvas.toJSON())
+        });
+        
+        activeCanvas.loadFromJSON(redoState.state, () => {
+          activeCanvas.renderAll();
+        });
+        
+        showToolMessage('Redid last action');
+      }
+    }
+
+    function clearCurrentLayer() {
+      if (confirm('Clear this layer? This action cannot be undone!')) {
+        const activeCanvas = canvases[currentLayerIndex];
+        if (activeCanvas) {
+          saveState();
+          activeCanvas.clear();
+          if (currentLayerIndex === 0) {
+            activeCanvas.backgroundColor = '#ffffff';
+          }
+          activeCanvas.renderAll();
+          
+          showToolMessage('Layer cleared successfully!');
+        }
+      }
+    }
+    
+    function newProject() {
+      if (confirm('Create a new canvas? Your current artwork will be lost!')) {
+        undoStack = [];
+        redoStack = [];
+        
+        canvases.forEach((canvas, index) => {
+          canvas.clear();
+          if (index === 0) {
+            canvas.backgroundColor = '#ffffff';
+          } else {
+            canvas.backgroundColor = 'transparent';
+          }
+          canvas.renderAll();
+        });
+        
+        currentLayerIndex = 0;
+        zoomLevel = 1.0;
+        updateZoom();
+        updateLayersPanel();
+        setActiveLayer(0);
+        updateCurrentCanvas();
+        
+        showToolMessage('New canvas created! Start creating!');
+      }
+    }
+    
+    function saveProject() {
+      try {
+        const projectData = {
+          version: '3.0',
+          app: 'Silly Paintings Painting World (Enhanced with Mirror & Lasso)',
+          timestamp: new Date().toISOString(),
+          layers: [],
+          settings: {
+            width: CANVAS_WIDTH,
+            height: CANVAS_HEIGHT,
+            currentLayer: currentLayerIndex,
+            zoom: zoomLevel,
+            mirror: {
+              enabled: isMirrorMode,
+              axis: mirrorAxis,
+              position: mirrorPosition
+            },
+            brushSettings: {
+              size: currentSize,
+              color: currentColor,
+              opacity: currentOpacity,
+              flow: currentFlow,
+              hardness: currentHardness,
+              type: currentBrushType,
+              tool: currentTool
+            },
+            calligraphySettings: {
+              font: currentCalligraphyFont
+            }
+          }
+        };
+        
+        canvases.forEach((canvas, index) => {
+          projectData.layers.push({
+            index: index,
+            data: canvas.toJSON(),
+            visible: canvas.lowerCanvasEl.style.display !== 'none'
+          });
+        });
+        
+        const dataStr = JSON.stringify(projectData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+        const exportFileDefaultName = `silly_painting_enhanced_${timestamp}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        showToolMessage('Enhanced painting with Mirror & Lasso saved!');
+        
+      } catch (error) {
+        showToolMessage('Error saving project: ' + error.message);
+      }
+    }
+    
+    function loadProject() {
+      document.getElementById('fileInput').click();
+    }
+    
+    function handleFileLoad(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const projectData = JSON.parse(e.target.result);
+          loadCanvasData(projectData);
+          showToolMessage('Enhanced painting loaded!');
+          
+        } catch (error) {
+          showToolMessage('Error loading project: ' + error.message);
+        }
+      };
+      
+      reader.readAsText(file);
+    }
+
+    function loadCanvasData(projectData) {
+      if (!projectData.layers || !Array.isArray(projectData.layers)) {
+        throw new Error('Invalid project file format');
+      }
+
+      canvases.forEach(canvas => {
+        const canvasEl = canvas.lowerCanvasEl;
+        if (canvasEl && canvasEl.parentNode) {
+          canvasEl.parentNode.removeChild(canvasEl);
+        }
+      });
+      canvases = [];
+
+      projectData.layers.forEach((layerData, index) => {
+        createLayer(index);
+        const canvas = canvases[index];
+        
+        canvas.loadFromJSON(layerData.data, () => {
+          canvas.renderAll();
+          
+          if (layerData.visible === false) {
+            canvas.lowerCanvasEl.style.display = 'none';
+            canvas.upperCanvasEl.style.display = 'none';
+          }
+        });
+      });
+      
+      currentLayerIndex = projectData.settings?.currentLayer || 0;
+      if (currentLayerIndex >= canvases.length) {
+        currentLayerIndex = 0;
+      }
+      
+      if (projectData.settings?.zoom) {
+        zoomLevel = projectData.settings.zoom;
+        updateZoom();
+      }
+      
+      // Restore mirror settings
+      if (projectData.settings?.mirror) {
+        isMirrorMode = projectData.settings.mirror.enabled || false;
+        mirrorAxis = projectData.settings.mirror.axis || 'vertical';
+        mirrorPosition = projectData.settings.mirror.position || 50;
+        
+        const mirrorBtn = document.getElementById('mirror-btn');
+        const axisBtn = document.getElementById('axis-btn');
+        
+        if (isMirrorMode) {
+          mirrorBtn.textContent = 'Mirror On';
+          mirrorBtn.classList.add('active');
+          document.getElementById('mirrorLine').style.display = 'block';
+        }
+        
+        axisBtn.textContent = mirrorAxis === 'vertical' ? 'Vertical' : 'Horizontal';
+        document.getElementById('mirrorPosition').value = mirrorPosition;
+        document.getElementById('mirrorPositionValue').textContent = mirrorPosition + '%';
+        
+        updateMirrorLine();
+      }
+      
+      // Restore brush settings if available
+      if (projectData.settings?.brushSettings) {
+        const brushSettings = projectData.settings.brushSettings;
+        
+        if (brushSettings.size !== undefined) {
+          currentSize = brushSettings.size;
+          document.getElementById('brushSize').value = currentSize;
+          updateBrushSize(currentSize);
+        }
+        
+        if (brushSettings.color) {
+          selectColor(brushSettings.color);
+        }
+        
+        if (brushSettings.opacity !== undefined) {
+          currentOpacity = brushSettings.opacity;
+          document.getElementById('brushOpacity').value = currentOpacity * 100;
+          updateOpacity(currentOpacity * 100);
+        }
+        
+        if (brushSettings.type) {
+          setBrushType(brushSettings.type);
+        }
+        
+        if (brushSettings.tool) {
+          setTool(brushSettings.tool);
+        }
+      }
+      
+      if (projectData.settings?.calligraphySettings?.font) {
+        setCalligraphyFont(projectData.settings.calligraphySettings.font);
+      }
+      
+      setActiveLayer(currentLayerIndex);
+      updateLayersPanel();
+      
+      document.getElementById('fileInput').value = '';
+    }
+    
+    function exportPNG() {
+      try {
+        const mergedCanvas = document.createElement('canvas');
+        mergedCanvas.width = CANVAS_WIDTH;
+        mergedCanvas.height = CANVAS_HEIGHT;
+        const ctx = mergedCanvas.getContext('2d');
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        
+        canvases.forEach(canvas => {
+          if (canvas.lowerCanvasEl.style.display !== 'none') {
+            ctx.drawImage(canvas.lowerCanvasEl, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+          }
+        });
+        
+        const image = mergedCanvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+        link.download = `silly_masterpiece_enhanced_${timestamp}.png`;
+        link.href = image;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToolMessage('Enhanced artwork exported!');
+        
+      } catch (error) {
+        showToolMessage('Error exporting image: ' + error.message);
+      }
+    }
+
+    function createProjectDataObject() {
+      const projectData = {
+        version: '3.0',
+        app: 'Silly Paintings Painting World (Enhanced with Mirror & Lasso)',
+        timestamp: new Date().toISOString(),
+        layers: [],
+        settings: {
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          currentLayer: currentLayerIndex,
+          zoom: zoomLevel,
+          mirror: {
+            enabled: isMirrorMode,
+            axis: mirrorAxis,
+            position: mirrorPosition
+          },
+          brushSettings: {
+            size: currentSize,
+            color: currentColor,
+            opacity: currentOpacity,
+            flow: currentFlow,
+            hardness: currentHardness,
+            type: currentBrushType,
+            tool: currentTool
+          },
+          calligraphySettings: {
+            font: currentCalligraphyFont
+          }
+        }
+      };
+
+      canvases.forEach((canvas, index) => {
+        projectData.layers.push({
+          index: index,
+          data: canvas.toJSON(),
+          visible: canvas.lowerCanvasEl.style.display !== 'none'
+        });
+      });
+      return projectData;
+    }
+
+    function autoSave() {
+      try {
+        const projectData = createProjectDataObject();
+        const dataStr = JSON.stringify(projectData);
+        localStorage.setItem(LOCAL_STORAGE_KEY, dataStr);
+        showAutoSaveStatus('Autosaved with Mirror & Lasso features!');
+      } catch (error) {
+        console.error('Auto-save failed:', error.message);
+        showAutoSaveStatus('Autosave failed!');
+      }
+    }
+
+    function loadAutoSavedProject() {
+      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedData) {
+        const projectData = JSON.parse(savedData);
+        if (projectData && projectData.layers && Array.isArray(projectData.layers) && projectData.layers.length > 0) {
+          const restore = confirm('An auto-saved project was found. Would you like to restore it?');
+          if (restore) {
+            try {
+              loadCanvasData(projectData);
+              showToolMessage('Restored auto-saved project!');
+            } catch (error) {
+              console.error('Failed to restore auto-saved project:', error.message);
+              showToolMessage('Failed to restore auto-saved project.');
+              createInitialLayers();
+            }
+          } else {
+            createInitialLayers();
+          }
+        } else {
+          createInitialLayers();
+        }
+      } else {
+        createInitialLayers();
+      }
+    }
+    
+    function showAutoSaveStatus(message) {
+      const statusEl = document.getElementById('autosave-status');
+      if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.style.opacity = '1';
+        setTimeout(() => {
+          statusEl.style.opacity = '0';
+        }, 3000);
+      }
+    }
+    
+  </script>
+</body>
+</html>
+          preview.style.filter = 'none';      showToolMessage('All objects grouped! Perfect for animation!');
+    }
+
+    // Calligraphy Functions
+    function setCalligraphyFont(fontFamily) {
+      currentCalligraphyFont = fontFamily;
+      
+      document.querySelectorAll('.font-btn').forEach(btn => btn.classList.remove('active'));
+      const fontButtons = {
+        'Dancing Script': 'font-dancing',
+        'Great Vibes': 'font-vibes',
+        'Kalam': 'font-kalam',
+        'Pacifico': 'font-pacifico'
+      };
+      
+      const activeBtn = document.getElementById(fontButtons[fontFamily]);
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      showToolMessage(`Calligraphy font: ${fontFamily}`);
+    }
+
+    function handleCalligraphyEnter(event) {
+      if (event.key === 'Enter') {
+        const text = event.target.value;
+        if (text.trim()) {
+          addCalligraphyText(text);
+          event.target.value = '';
+        }
+      }
+    }
+
+    function addCalligraphyText(text) {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (!activeCanvas) return;
+      
+      const fontSize = Math.max(12, currentSize * 2);
+      const fabricText = new fabric.Text(text, {
+        left: CANVAS_WIDTH / 2,
+        top: CANVAS_HEIGHT / 2,
+        fontFamily: currentCalligraphyFont,
+        fontSize: fontSize,
+        fill: currentColor,
+        originX: 'center',
+        originY: 'center',
+        angle: 0,
+        opacity: currentOpacity,
+        shadow: new fabric.Shadow({
+          color: hexToRgba(currentColor, 0.3),
+          blur: Math.max(2, fontSize * 0.05),
+          offsetX: 2,
+          offsetY: 2
+        })
+      });
+      
+      activeCanvas.add(fabricText);
+      activeCanvas.setActiveObject(fabricText);
+      activeCanvas.renderAll();
+      
+      saveState();
+      showToolMessage('Beautiful calligraphy added!');
+    }
+
+    function handleTextClick(options, canvas) {
+      if (currentTool === 'calligraphy') {
+        const text = document.getElementById('calligraphyText').value;
+        if (text.trim()) {
+          const pointer = canvas.getPointer(options.e);
+          const fontSize = Math.max(12, currentSize * 2);
+          
+          const fabricText = new fabric.Text(text, {
+            left: pointer.x,
+            top: pointer.y,
+            fontFamily: currentCalligraphyFont,
+            fontSize: fontSize,
+            fill: currentColor,
+            originX: 'left',
+            originY: 'top',
+            opacity: currentOpacity,
+            shadow: new fabric.Shadow({
+              color: hexToRgba(currentColor, 0.3),
+              blur: Math.max(2, fontSize * 0.05),
+              offsetX: 2,
+              offsetY: 2
+            })
+          });
+          
+          canvas.add(fabricText);
+          canvas.setActiveObject(fabricText);
+          canvas.renderAll();
+          
+          document.getElementById('calligraphyText').value = '';
+          saveState();
+          showToolMessage('Calligraphy placed on canvas!');
+        } else {
+          showToolMessage('Please enter text for calligraphy first!');
+        }
+      } else if (currentTool === 'text') {
+        const text = prompt('Enter text:');
+        if (text && text.trim()) {
+          const pointer = canvas.getPointer(options.e);
+          const fontSize = Math.max(12, currentSize * 1.5);
+          
+          const fabricText = new fabric.Text(text, {
+            left: pointer.x,
+            top: pointer.y,
+            fontFamily: 'Poppins',
+            fontSize: fontSize,
+            fill: currentColor,
+            originX: 'left',
+            originY: 'top',
+            opacity: currentOpacity
+          });
+          
+          canvas.add(fabricText);
+          canvas.setActiveObject(fabricText);
+          canvas.renderAll();
+          
+          saveState();
+          showToolMessage('Text added to canvas!');
+        }
+      }
+    }
+
+    // Image Functions
+    function handleImageClick(options, canvas) {
+      showToolMessage('Use the image controls in the sidebar to insert images!');
+    }
+
+    function insertImageFromFile() {
+      document.getElementById('imageFileInput').click();
+    }
+
+    function handleImageFileLoad(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      if (!file.type.startsWith('image/')) {
+        showToolMessage('Please select a valid image file!');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        addImageToCanvas(e.target.result);
+      };
+      reader.readAsDataURL(file);
+      
+      event.target.value = '';
+    }
+
+    function insertImageFromURL() {
+      const url = prompt('Enter image URL:');
+      if (url && url.trim()) {
+        addImageToCanvas(url.trim());
+      }
+    }
+
+    function insertEmojiImage() {
+      const emoji = prompt('Enter emoji (e.g., 😀, 🎨, 🌈):');
+      if (emoji && emoji.trim()) {
+        addEmojiToCanvas(emoji.trim());
+      }
+    }
+
+    function addImageToCanvas(imageSrc) {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (!activeCanvas) return;
+      
+      fabric.Image.fromURL(imageSrc, function(img) {
+        const maxSize = 300;
+        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        
+        img.set({
+          left: CANVAS_WIDTH / 2,
+          top: CANVAS_HEIGHT / 2,
+          originX: 'center',
+          originY: 'center',
+          scaleX: scale,
+          scaleY: scale,
+          opacity: currentOpacity
+        });
+        
+        activeCanvas.add(img);
+        activeCanvas.setActiveObject(img);
+        activeCanvas.renderAll();
+        
+        saveState();
+        showToolMessage('Image added to canvas!');
+      }, {
+        crossOrigin: 'anonymous'
+      });
+    }
+
+    function addEmojiToCanvas(emoji) {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (!activeCanvas) return;
+      
+      const fontSize = Math.max(48, currentSize * 4);
+      const fabricText = new fabric.Text(emoji, {
+        left: CANVAS_WIDTH / 2,
+        top: CANVAS_HEIGHT / 2,
+        fontSize: fontSize,
+        originX: 'center',
+        originY: 'center',
+        opacity: currentOpacity
+      });
+      
+      activeCanvas.add(fabricText);
+      activeCanvas.setActiveObject(fabricText);
+      activeCanvas.renderAll();
+      
+      saveState();
+      showToolMessage('Emoji added to canvas!');
+    }
+
+    function setupBrushSettings(canvas) {
+      let actualSize = currentSize;
+      if (currentSize < 1 && isTinyBrushActive) {
+        actualSize = currentSize;
+      }
+      
+      canvas.freeDrawingBrush.width = actualSize;
+      canvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
+      canvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
+    }
+
+    function createAdvancedBrush(canvas) {
+      return new fabric.PencilBrush(canvas);
+    }
+
+    function setupPaintBrushSettings(canvas) {
+      const brush = canvas.freeDrawingBrush;
+      
+      let effectiveSize;
+      if (currentSize < 1) {
+        effectiveSize = currentSize * (0.9 + (pressureSimulation * 0.1));
+      } else {
+        effectiveSize = currentSize * (0.8 + (pressureSimulation * 0.4));
+      }
+      
+      const effectiveOpacity = currentOpacity * currentFlow * (0.7 + (pressureSimulation * 0.3));
+      
+      brush.width = effectiveSize;
+      brush.color = hexToRgba(currentColor, effectiveOpacity);
+      
+      switch (currentBrushType) {
+        case 'soft':
+          brush.shadowBlur = currentSize < 1 ? Math.max(0.5, currentSize * 0.8) : Math.max(3, currentSize * 0.4 * (1 - currentHardness));
+          brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.6);
+          break;
+        case 'hard':
+          brush.shadowBlur = 0;
+          brush.shadowColor = 'transparent';
+          break;
+        case 'texture':
+          brush.width = effectiveSize * (0.9 + Math.random() * 0.2);
+          break;
+        default:
+          brush.shadowBlur = currentSize < 1 ? Math.max(0.2, currentSize * 0.3) : Math.max(0.5, currentSize * 0.15 * (1 - currentHardness));
+          brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.4);
+      }
+    }
+
+    function handleFillClick(options, canvas) {
+      const pointer = canvas.getPointer(options.e);
+      const x = Math.floor(pointer.x);
+      const y = Math.floor(pointer.y);
+      
+      const ctx = canvas.getContext();
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixelData = imageData.data;
+      
+      const targetColor = getPixelColor(pixelData, x, y, canvas.width);
+      const fillColor = hexToRgb(currentColor);
+      
+      if (colorsEqual(targetColor, fillColor)) return;
+      
+      showToolMessage('Filling area with color...');
+      
+      floodFill(pixelData, x, y, targetColor, fillColor, canvas.width, canvas.height);
+      
+      ctx.putImageData(imageData, 0, 0);
+      canvas.renderAll();
+      
+      saveState();
+    }
+
+    function getPixelColor(pixelData, x, y, width) {
+      const index = (y * width + x) * 4;
+      return {
+        r: pixelData[index],
+        g: pixelData[index + 1],
+        b: pixelData[index + 2],
+        a: pixelData[index + 3]
+      };
+    }
+
+    function setPixelColor(pixelData, x, y, width, color) {
+      const index = (y * width + x) * 4;
+      pixelData[index] = color.r;
+      pixelData[index + 1] = color.g;
+      pixelData[index + 2] = color.b;
+      pixelData[index + 3] = color.a || 255;
+    }
+
+    function colorsEqual(color1, color2) {
+      return color1.r === color2.r && 
+             color1.g === color2.g && 
+             color1.b === color2.b && 
+             color1.a === color2.a;
+    }
+
+    function floodFill(pixelData, startX, startY, targetColor, fillColor, width, height) {
+      const stack = [{x: startX, y: startY}];
+      const visited = new Set();
+      
+      while (stack.length > 0) {
+        const {x, y} = stack.pop();
+        
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+        
+        const key = y * width + x;
+        if (visited.has(key)) continue;
+        visited.add(key);
+        
+        const currentColor = getPixelColor(pixelData, x, y, width);
+        if (!colorsEqual(currentColor, targetColor)) continue;
+        
+        setPixelColor(pixelData, x, y, width, fillColor);
+        
+        stack.push({x: x + 1, y: y});
+        stack.push({x: x - 1, y: y});
+        stack.push({x: x, y: y + 1});
+        stack.push({x: x, y: y - 1});
+      }
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+        a: 255
+      } : null;
+    }
+
+    function hexToRgba(hex, opacity) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (result) {
+        const r = parseInt(result[1], 16);
+        const g = parseInt(result[2], 16);
+        const b = parseInt(result[3], 16);
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      }
+      return hex;
+    }
+    
+    function handleHexInput(event) {
+        const hex = event.target.value;
+        const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+        if (hexRegex.test(hex)) {
+            selectColor(hex);
+        }
+    }
+
+    function ungroupSelected() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj || activeObj.type !== 'group') {
+        showToolMessage('Please select a group to ungroup!');
+        return;
+      }
+      
+      // Ungroup the selected group
+      const items = activeObj.toActiveSelection();
+      activeCanvas.renderAll();
+      
+      selectedObjects = [];
+      currentGroup = null;
+      saveState();
+      
+      showToolMessage('Group ungrouped successfully!');
+    }
+
+    function duplicatePicture() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('Please select an object or group to duplicate!');
+        return;
+      }
+      
+      activeObj.clone(function(cloned) {
+        cloned.set({
+          left: cloned.left + 20,
+          top: cloned.top + 20,
+          evented: true,
+          selectable: true
+        });
+        
+        if (cloned.type === 'activeSelection') {
+          cloned.canvas = activeCanvas;
+          cloned.forEachObject(function(obj) {
+            activeCanvas.add(obj);
+          });
+          cloned.setCoords();
+        } else {
+          activeCanvas.add(cloned);
+        }
+        
+        activeCanvas.setActiveObject(cloned);
+        activeCanvas.renderAll();
+        
+        selectedObjects = [cloned];
+        updatePictureControls();
+        saveState();
+        
+        showToolMessage('Picture duplicated! Perfect for animation frames!');
+      });
+    }
+
+    function scalePicture(scalePercent) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('Please select an object to scale!');
+        return;
+      }
+      
+      const scale = scalePercent / 100;
+      activeObj.set({
+        scaleX: scale,
+        scaleY: scale
+      });
+      
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureScaleValue').textContent = scalePercent + '%';
+      
+      if (scalePercent !== 100) {
+        showToolMessage(`Picture scaled to ${scalePercent}%!`);
+      }
+    }
+
+    function rotatePictureSlider(angle) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('Please select an object to rotate!');
+        return;
+      }
+      
+      activeObj.set({ angle: parseInt(angle) });
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureRotationValue').textContent = angle + '°';
+      
+      if (angle != 0) {
+        showToolMessage(`Picture rotated to ${angle}°!`);
+      }
+    }
+
+    function rotatePicture() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('Please select an object to rotate!');
+        return;
+      }
+      
+      const currentAngle = activeObj.angle || 0;
+      const newAngle = (currentAngle + 90) % 360;
+      
+      activeObj.set({ angle: newAngle });
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureRotation').value = newAngle;
+      document.getElementById('pictureRotationValue').textContent = newAngle + '°';
+      
+      showToolMessage(`Picture rotated 90°! Now at ${newAngle}°`);
+    }
+
+    function flipPicture(direction) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage(`Please select an object to flip ${direction}!`);
+        return;
+      }
+      
+      if (direction === 'horizontal') {
+        activeObj.set({ flipX: !activeObj.flipX });
+        showToolMessage('Picture flipped horizontally!');
+      } else if (direction === 'vertical') {
+        activeObj.set({ flipY: !activeObj.flipY });
+        showToolMessage('Picture flipped vertically!');
+      }
+      
+      activeObj.setCoords();
+      activeCanvas.renderAll();
+      saveState();
+    }
+
+    function changePictureOpacity(opacityPercent) {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('Please select an object to change opacity!');
+        return;
+      }
+      
+      const opacity = opacityPercent / 100;
+      activeObj.set({ opacity: opacity });
+      activeCanvas.renderAll();
+      
+      document.getElementById('pictureOpacityValue').textContent = opacityPercent + '%';
+      
+      if (opacityPercent !== 100) {
+        showToolMessage(`Picture opacity set to ${opacityPercent}%!`);
+      }
+    }
+
+    function selectAllObjects() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const objects = activeCanvas.getObjects();
+      
+      if (objects.length === 0) {
+        showToolMessage('No objects to select!');
+        return;
+      }
+      
+      const selection = new fabric.ActiveSelection(objects, {
+        canvas: activeCanvas,
+      });
+      
+      activeCanvas.setActiveObject(selection);
+      activeCanvas.renderAll();
+      
+      selectedObjects = objects;
+      showToolMessage(`Selected all ${objects.length} objects!`);
+    }
+
+    function deleteSelectedObjects() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const activeObj = activeCanvas.getActiveObject();
+      
+      if (!activeObj) {
+        showToolMessage('No objects selected to delete!');
+        return;
+      }
+      
+      if (activeObj.type === 'activeSelection') {
+        activeObj.forEachObject(function(obj) {
+          activeCanvas.remove(obj);
+        });
+      } else {
+        activeCanvas.remove(activeObj);
+      }
+      
+      activeCanvas.discardActiveObject();
+      activeCanvas.renderAll();
+      
+      selectedObjects = [];
+      currentGroup = null;
+      saveState();
+      
+      showToolMessage('Selected objects deleted!');
+    }
+
+    function clearSelection() {
+      const activeCanvas = canvases[currentLayerIndex];
+      activeCanvas.discardActiveObject();
+      activeCanvas.renderAll();
+      
+      selectedObjects = [];
+      currentGroup = null;
+      
+      showToolMessage('Selection cleared!');
+    }
+
+    function setTinyBrush(size) {
+      document.querySelectorAll('.tiny-brush-btn').forEach(btn => btn.classList.remove('active'));
+      
+      const tinyId = `tiny-${size.toString().replace('.', '')}`;
+      const tinyBtn = document.getElementById(tinyId);
+      if (tinyBtn) tinyBtn.classList.add('active');
+      
+      currentSize = size;
+      isTinyBrushActive = true;
+      
+      document.getElementById('brushSize').value = size;
+      document.getElementById('sizeValue').textContent = size;
+      
+      updateCurrentCanvas();
+      updateBrushPreview();
+      
+      showToolMessage(`Tiny brush ${size}px activated! Perfect for details!`);
+      
+      if (zoomLevel < 2 && size < 1) {
+        zoomLevel = 3;
+        updateZoom();
+        showToolMessage('Auto-zoomed for tiny brush precision!');
+      }
+    }
+
+    function setTool(tool) {
+      document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+      
+      const toolBtn = document.getElementById(`${tool}-tool`);
+      if (toolBtn) toolBtn.classList.add('active');
+      
+      currentTool = tool;
+      
+      document.getElementById('calligraphySection').style.display = tool === 'calligraphy' ? 'block' : 'none';
+      document.getElementById('imageSection').style.display = tool === 'image' ? 'block' : 'none';
+      document.getElementById('pictureSection').style.display = tool === 'move' ? 'block' : 'none';
+      
+      updateCurrentCanvas();
+      updateCursor();
+      
+      if (tool !== 'move') {
+        clearSelection();
+        clearTinyBrushSelection();
+      }
+      
+      if (tool !== 'lasso') {
+        cancelLassoSelection();
+      }
+      
+      showToolFeedback(tool);
+    }
+
+    function clearTinyBrushSelection() {
+      document.querySelectorAll('.tiny-brush-btn').forEach(btn => btn.classList.remove('active'));
+      isTinyBrushActive = false;
+    }
+
+    function showToolFeedback(tool) {
+      const toolNames = {
+        'brush': 'Brush Tool',
+        'paintbrush': 'Paint Brush',
+        'pencil': 'Pencil Tool',
+        'calligraphy': 'Calligraphy Tool',
+        'text': 'Text Tool',
+        'image': 'Image Tool',
+        'move': 'Move/Animation Tool',
+        'eraser': 'Eraser Tool',
+        'fill': 'Fill Bucket',
+        'lasso': 'Lasso Fill Selection',
+        'spray': 'Spray Paint',
+        'marker': 'Marker Tool'
+      };
+      
+      const feedback = document.createElement('div');
+      feedback.textContent = toolNames[tool] || tool;
+      feedback.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
+        color: white;
+        padding: 15px 30px;
+        border-radius: 20px;
+        font-size: 18px;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      `;
+      
+      document.body.appendChild(feedback);
+      
+      setTimeout(() => feedback.style.opacity = '1', 10);
+      setTimeout(() => {
+        feedback.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(feedback), 300);
+      }, 1000);
+    }
+
+    function updateCursor() {
+      const container = document.getElementById('canvas-container');
+      
+      container.classList.remove('fill-cursor', 'eraser-cursor', 'text-cursor', 'image-cursor', 'move-cursor', 'lasso-cursor');
+      
+      switch (currentTool) {
+        case 'fill':
+          container.classList.add('fill-cursor');
+          break;
+        case 'eraser':
+          container.classList.add('eraser-cursor');
+          break;
+        case 'text':
+        case 'calligraphy':
+          container.classList.add('text-cursor');
+          break;
+        case 'image':
+          container.classList.add('image-cursor');
+          break;
+        case 'move':
+          container.classList.add('move-cursor');
+          break;
+        case 'lasso':
+          container.classList.add('lasso-cursor');
+          break;
+        default:
+          container.style.cursor = 'crosshair';
+      }
+    }
+
+    function updateCurrentCanvas() {
+      const activeCanvas = canvases[currentLayerIndex];
+      if (!activeCanvas) return;
+      
+      let actualBrushSize = currentSize;
+      
+      switch (currentTool) {
+        case 'move':
+          activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = true;
+          activeCanvas.forEachObject(function(obj) {
+            obj.selectable = true;
+            obj.evented = true;
+          });
+          break;
+          
+        case 'lasso':
+          activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = false;
+          break;
+          
+        case 'brush':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
+          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
+          setupBrushSettings(activeCanvas);
+          break;
+          
+        case 'paintbrush':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
+          activeCanvas.freeDrawingBrush = createAdvancedBrush(activeCanvas);
+          setupPaintBrushSettings(activeCanvas);
+          break;
+          
+        case 'pencil':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
+          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
+          if (currentSize < 1) {
+            actualBrushSize = currentSize;
+          } else {
+            actualBrushSize = Math.max(0.1, currentSize * 0.4);
+          }
+          activeCanvas.freeDrawingBrush.width = actualBrushSize;
+          activeCanvas.freeDrawingBrush.color = currentColor;
+          activeCanvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
+          break;
+          
+        case 'calligraphy':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
+          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
+          actualBrushSize = currentSize < 1 ? currentSize * 2 : currentSize * 1.5;
+          activeCanvas.freeDrawingBrush.width = actualBrushSize;
+          activeCanvas.freeDrawingBrush.color = currentColor;
+          activeCanvas.freeDrawingBrush.shadowBlur = Math.max(1, actualBrushSize * 0.1);
+          activeCanvas.freeDrawingBrush.shadowColor = hexToRgba(currentColor, 0.3);
+          break;
+          
+        case 'text':
+        case 'image':
+          activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = false;
+          break;
+          
+        case 'eraser':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
+          activeCanvas.freeDrawingBrush = new fabric.EraserBrush(activeCanvas);
+          if (currentSize < 1) {
+            actualBrushSize = currentSize * 1.5;
+          } else {
+            actualBrushSize = currentSize * 1.2;
+          }
+          activeCanvas.freeDrawingBrush.width = actualBrushSize;
+          break;
+          
+        case 'fill':
+          activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = false;
+          break;
+          
+        case 'spray':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
+          if (fabric.SprayBrush) {
+            activeCanvas.freeDrawingBrush = new fabric.SprayBrush(activeCanvas);
+            activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 3 : currentSize * 1.8;
+            activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
+            activeCanvas.freeDrawingBrush.density = Math.max(1, 40 - (currentHardness * 0.35));
+          } else {
+            activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
+            activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 2 : currentSize * 1.5;
+            activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow * 0.7);
+          }
+          break;
+          
+        case 'marker':
+          activeCanvas.isDrawingMode = true;
+          activeCanvas.selection = false;
+          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
+          activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 2 : currentSize * 1.4;
+          activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, 0.75 * currentOpacity);
+          break;
+          
+        default:
+          activeCanvas.isDrawingMode = false;
+          activeCanvas.selection = false;
+      }
+    }
+
+    function showToolMessage(message) {
+      const messageEl = document.createElement('div');
+      messageEl.textContent = message;
+      messageEl.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 15px;
+        font-size: 16px;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        max-width: 300px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.4s ease;
+      `;
+      
+      document.body.appendChild(messageEl);
+      
+      setTimeout(() => {
+        messageEl.style.opacity = '1';
+        messageEl.style.transform = 'translateX(0)';
+      }, 10);
+      
+      setTimeout(() => {
+        messageEl.style.opacity = '0';
+        messageEl.style.transform = 'translateX(100%)';
+        setTimeout(() => document.body.removeChild(messageEl), 400);
+      }, 3000);
+    }  </style>
+</head>
+<body>
+  <div class="loading" id="loadingScreen">
+    <div class="loading-spinner"></div>
+    <div>Loading Silly Paintings Painting World...</div>
+    <div style="font-size: 16px; margin-top: 15px; opacity: 0.8;">Get ready to create something silly and beautiful with Mirror & Lasso effects! ✨</div>
+  </div>
+
+  <div class="header">
+    <div class="logo">Silly Paintings Painting World!</div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="newProject()">🆕 New Canvas</button>
+      <button class="header-btn" onclick="saveProject()">💾 Save Art</button>
+      <button class="header-btn" onclick="loadProject()">📂 Load Art</button>
+      <button class="header-btn" onclick="exportPNG()">📷 Download</button>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <div class="left-sidebar">
+      <button class="tool-btn active" onclick="setTool('brush')" title="Brush Tool" id="brush-tool">
+        🖌️
+      </button>
+      <button class="tool-btn" onclick="setTool('paintbrush')" title="Paint Brush" id="paintbrush-tool">
+        🎨
+      </button>
+      <button class="tool-btn" onclick="setTool('pencil')" title="Pencil Tool" id="pencil-tool">
+        ✏️
+      </button>
+      <button class="tool-btn" onclick="setTool('calligraphy')" title="Calligraphy Tool" id="calligraphy-tool">
+        ✒️
+      </button>
+      <button class="tool-btn" onclick="setTool('text')" title="Text Tool" id="text-tool">
+        📝
+      </button>
+      <button class="tool-btn" onclick="setTool('image')" title="Insert Image" id="image-tool">
+        🖼️
+      </button>
+      <button class="tool-btn" onclick="setTool('move')" title="Move/Select Pictures" id="move-tool">
+        ↔️
+      </button>
+      <button class="tool-btn" onclick="setTool('eraser')" title="Eraser Tool" id="eraser-tool">
+        🧹
+      </button>
+      <button class="tool-btn" onclick="setTool('fill')" title="Fill Bucket" id="fill-tool">
+        🪣
+      </button>
+      <button class="tool-btn" onclick="setTool('lasso')" title="Lasso Fill Selection" id="lasso-tool">
+        🔗
+      </button>
+      <button class="tool-btn" onclick="setTool('spray')" title="Spray Paint" id="spray-tool">
+        💨
+      </button>
+      <button class="tool-btn" onclick="setTool('marker')" title="Marker Tool" id="marker-tool">
+        🖍️
+      </button>
+    </div>
+
+    <div class="canvas-area">
+      <div id="canvas-container">
+        <div class="mirror-line" id="mirrorLine"></div>
+      </div>
+      <div class="size-indicator" id="sizeIndicator"></div>
+    </div>
+
+    <div class="right-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">✨ Special Effects</div>
+        <div class="effects-section">
+          <div class="effects-title">🪞 Mirror & Lasso Tools</div>
+          <div class="effects-controls">
+            <button class="effects-btn" onclick="toggleMirrorMode()" id="mirror-btn">🪞 Mirror Off</button>
+            <button class="effects-btn" onclick="toggleMirrorAxis()" id="axis-btn">↕️ Vertical</button>
+          </div>
+          <div class="slider-container">
+            <div class="slider-label">
+              <span>🪞 Mirror Position</span>
+              <span id="mirrorPositionValue">50%</span>
+            </div>
+            <input type="range" class="slider" id="mirrorPosition" min="0" max="100" step="1" value="50" oninput="updateMirrorPosition(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="pictureSection" style="display: none;">
+        <div class="sidebar-title">🎬 Picture Animation</div>
+        <div class="picture-section">
+          <div class="picture-title">📐 Picture Tools</div>
+          <div class="picture-controls">
+            <button class="picture-btn" onclick="groupAllObjects()" id="group-btn">📦 Group All</button>
+            <button class="picture-btn" onclick="ungroupSelected()" id="ungroup-btn">📂 Ungroup</button>
+            <button class="picture-btn" onclick="duplicatePicture()" id="duplicate-btn">📋 Duplicate</button>
+            <button class="picture-btn" onclick="flipPicture('horizontal')" id="flip-h-btn">↔️ Flip H</button>
+            <button class="picture-btn" onclick="flipPicture('vertical')" id="flip-v-btn">↕️ Flip V</button>
+            <button class="picture-btn" onclick="rotatePicture()" id="rotate-btn">🔄 Rotate</button>
+          </div>
+          
+          <div class="slider-container">
+            <div class="slider-label">
+              <span>📏 Picture Size</span>
+              <span id="pictureScaleValue">100%</span>
+            </div>
+            <input type="range" class="slider" id="pictureScale" min="10" max="500" step="5" value="100" oninput="scalePicture(this.value)">
+          </div>
+          
+          <div class="slider-container">
+            <div class="slider-label">
+              <span>🔄 Rotation</span>
+              <span id="pictureRotationValue">0°</span>
+            </div>
+            <input type="range" class="slider" id="pictureRotation" min="0" max="360" step="1" value="0" oninput="rotatePictureSlider(this.value)">
+          </div>
+          
+          <div class="slider-container">
+            <div class="slider-label">
+              <span>👻 Transparency</span>
+              <span id="pictureOpacityValue">100%</span>
+            </div>
+            <input type="range" class="slider" id="pictureOpacity" min="10" max="100" step="5" value="100" oninput="changePictureOpacity(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">🌈 Colors</div>
+        <div class="color-grid">
+          <div class="color-btn active" style="background: #000;" onclick="selectColor('#000000')" title="Black"></div>
+          <div class="color-btn" style="background: #fff;" onclick="selectColor('#ffffff')" title="White"></div>
+          <div class="color-btn" style="background: #ff0000;" onclick="selectColor('#ff0000')" title="Red"></div>
+          <div class="color-btn" style="background: #00ff00;" onclick="selectColor('#00ff00')" title="Green"></div>
+          <div class="color-btn" style="background: #0000ff;" onclick="selectColor('#0000ff')" title="Blue"></div>
+          <div class="color-btn" style="background: #ffff00;" onclick="selectColor('#ffff00')" title="Yellow"></div>
+          <div class="color-btn" style="background: #ff00ff;" onclick="selectColor('#ff00ff')" title="Magenta"></div>
+          <div class="color-btn" style="background: #00ffff;" onclick="selectColor('#00ffff')" title="Cyan"></div>
+          <div class="color-btn" style="background: #ffa500;" onclick="selectColor('#ffa500')" title="Orange"></div>
+          <div class="color-btn" style="background: #800080;" onclick="selectColor('#800080')" title="Purple"></div>
+          <div class="color-btn" style="background: #ffc0cb;" onclick="selectColor('#ffc0cb')" title="Pink"></div>
+          <div class="color-btn" style="background: #90ee90;" onclick="selectColor('#90ee90')" title="Light Green"></div>
+        </div>
+        <input type="color" id="colorPicker" value="#000000" onchange="selectColor(this.value)">
+        
+        <div class="hex-input-container">
+          <label for="hexInput">Hex Code:</label>
+          <input type="text" id="hexInput" placeholder="#000000" oninput="handleHexInput(event)">
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="calligraphySection" style="display: none;">
+        <div class="sidebar-title">✒️ Calligraphy</div>
+        <div class="calligraphy-section">
+          <div class="calligraphy-title">📜 Calligraphy Fonts</div>
+          <div class="font-grid">
+            <button class="font-btn active dancing-script" onclick="setCalligraphyFont('Dancing Script')" id="font-dancing">Dancing</button>
+            <button class="font-btn great-vibes" onclick="setCalligraphyFont('Great Vibes')" id="font-vibes">Vibes</button>
+            <button class="font-btn kalam" onclick="setCalligraphyFont('Kalam')" id="font-kalam">Kalam</button>
+            <button class="font-btn pacifico" onclick="setCalligraphyFont('Pacifico')" id="font-pacifico">Pacific</button>
+          </div>
+          <div class="text-input-container">
+            <input type="text" id="calligraphyText" placeholder="Enter text for calligraphy..." onkeypress="handleCalligraphyEnter(event)">
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" id="imageSection" style="display: none;">
+        <div class="sidebar-title">🖼️ Images</div>
+        <div class="image-section">
+          <div class="image-title">📸 Image Tools</div>
+          <div class="image-controls">
+            <button class="image-btn" onclick="insertImageFromFile()">📁 Upload Image</button>
+            <button class="image-btn" onclick="insertImageFromURL()">🌐 From URL</button>
+            <button class="image-btn" onclick="insertEmojiImage()">😀 Insert Emoji</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">🖌️ Brush Settings</div>
+        <div class="brush-preview">
+          <div class="brush-stroke" id="brushPreview"></div>
+          <div class="size-display" id="sizeDisplay">15px</div>
+        </div>
+        
+        <div class="tiny-brush-section">
+          <div class="tiny-brush-title">🔬 Tiny Brushes</div>
+          <div class="tiny-brush-grid">
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.1)" id="tiny-01">0.1px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.2)" id="tiny-02">0.2px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.3)" id="tiny-03">0.3px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.5)" id="tiny-05">0.5px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.7)" id="tiny-07">0.7px</button>
+            <button class="tiny-brush-btn" onclick="setTinyBrush(0.8)" id="tiny-08">0.8px</button>
+          </div>
+        </div>
+        
+        <div class="brush-controls">
+          <button class="brush-type-btn active" onclick="setBrushType('normal')" id="normal-brush">Normal</button>
+          <button class="brush-type-btn" onclick="setBrushType('texture')" id="texture-brush">Textured</button>
+          <button class="brush-type-btn" onclick="setBrushType('soft')" id="soft-brush">Soft</button>
+          <button class="brush-type-btn" onclick="setBrushType('hard')" id="hard-brush">Hard</button>
+        </div>
+        
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>📏 Size</span>
+            <span id="sizeValue">15</span>
+          </div>
+          <input type="range" class="slider" id="brushSize" min="0.1" max="200" step="0.1" value="15" oninput="updateBrushSize(this.value)">
+        </div>
+        
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>💧 Opacity</span>
+            <span id="opacityValue">100%</span>
+          </div>
+          <input type="range" class="slider" id="brushOpacity" min="1" max="100" value="100" oninput="updateOpacity(this.value)">
+        </div>
+        
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>🌊 Flow</span>
+            <span id="flowValue">100%</span>
+          </div>
+          <input type="range" class="slider" id="brushFlow" min="1" max="100" value="100" oninput="updateFlow(this.value)">
+        </div>
+        
+        <div class="slider-container">
+          <div class="slider-label">
+            <span>⚡ Hardness</span>
+            <span id="hardnessValue">100%</span>
+          </div>
+          <input type="range" class="slider" id="brushHardness" min="0" max="100" value="100" oninput="updateHardness(this.value)">
+        </div>
+        
+        <div class="pressure-indicator" title="Brush Pressure">
+          <div class="pressure-bar" id="pressureBar"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">📚 Drawing Layers</div>
+        <div class="layers-panel" id="layersPanel">
+        </div>
+        <button class="header-btn" onclick="addLayer()" style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #4ecdc4, #45b7d1);">➕ Add New Layer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-toolbar">
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+      <div class="zoom-level" id="zoomLevel">100%</div>
+      <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+    </div>
+    <button class="action-btn undo" onclick="undoAction()" title="Undo Last Action">↶ Undo</button>
+    <button class="action-btn redo" onclick="redoAction()" title="Redo Last Action">↷ Redo</button>
+    <button class="action-btn clear" onclick="clearCurrentLayer()" title="Clear Current Layer">🧼 Clear Layer</button>
+  </div>
+  
+  <div id="autosave-status"></div>
+
+  <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileLoad(event)">
+  <input type="file" id="imageFileInput" class="file-input" accept="image/*" onchange="handleImageFileLoad(event)">
+
+  <script>
+    // Global variables
+    let canvases = [];
+    let currentLayerIndex = 0;
+    let currentTool = 'brush';
+    let currentBrushType = 'normal';
+    let currentColor = '#000000';
+    let currentSize = 15;
+    let currentOpacity = 1.0;
+    let currentFlow = 1.0;
+    let currentHardness = 1.0;
+    let zoomLevel = 1.0;
+    let isDrawing = false;
+    let undoStack = [];
+    let redoStack = [];
+    let pressureSimulation = 0.5;
+    let isMouseDown = false;
+    let isTinyBrushActive = false;
+    let currentCalligraphyFont = 'Dancing Script';
+    let isImageMode = false;
+    
+    // Picture manipulation variables
+    let selectedObjects = [];
+    let currentGroup = null;
+    let isMovingPicture = false;
+    let lastSelectedGroup = null;
+    
+    // NEW - Mirror drawing variables
+    let isMirrorMode = false;
+    let mirrorAxis = 'vertical'; // 'vertical' or 'horizontal'
+    let mirrorPosition = 50; // percentage position of mirror line
+    
+    // NEW - Lasso fill variables
+    let isLassoMode = false;
+    let lassoPath = [];
+    let lassoStarted = false;
+    let lassoCanvas = null;
+    
+    // Canvas settings - Maximized for students
+    const CANVAS_WIDTH = 1400;
+    const CANVAS_HEIGHT = 900;
+    const MAX_LAYERS = 10;
+    const AUTOSAVE_INTERVAL = 60000; // 1 minute in milliseconds
+    const LOCAL_STORAGE_KEY = 'silly_paintings_autosave';
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        initializeApp();
+        document.getElementById('loadingScreen').style.display = 'none';
+      }, 2000);
+    });
+
+    function initializeApp() {
+      // Check for and load auto-saved data first
+      loadAutoSavedProject();
+      
+      // If no auto-saved data, create initial layers
+      if (canvases.length === 0) {
+        createInitialLayers();
+      }
+
+      setupCanvasContainer();
+      updateLayersPanel();
+      updateBrushPreview();
+      setupEventListeners();
+      showWelcomeMessage();
+      
+      // Start auto-save
+      setInterval(autoSave, AUTOSAVE_INTERVAL);
+    }
+
+    function showWelcomeMessage() {
+      setTimeout(() => {
+        alert('🎨 Welcome to Silly Paintings Painting World! 🎨\n\n✨ NEW Features:\n🪞 MIRROR DRAWING: Enable mirror mode to draw symmetrically!\n🔗 LASSO FILL: Select custom areas with lasso tool and fill them!\n\n✨ Animation Features:\n• ↔️ Move Tool: Select and move entire pictures\n• 📦 Group drawings together for easy manipulation\n• 📏 Resize pictures with the scale slider\n• 🔄 Rotate pictures for dynamic animations\n• 👻 Adjust transparency for layered effects\n• 📋 Duplicate pictures for frame-by-frame animation\n\n🎬 Perfect for creating:\n• Symmetrical art with mirror mode\n• Custom fill areas with lasso selection\n• Animated characters\n• Moving objects\n• Frame-by-frame animations\n• Dynamic compositions\n\n💡 Tips:\n• Try mirror mode with different axes (vertical/horizontal)\n• Use lasso tool to select and fill irregular shapes\n• Adjust mirror position for off-center symmetry\n• Save frequently to preserve your animation work!\n\nHappy creating! 🌈✨');
+      }, 1000);
+    }
+
+    // NEW - Mirror Drawing Functions
+    function toggleMirrorMode() {
+      isMirrorMode = !isMirrorMode;
+      const btn = document.getElementById('mirror-btn');
+      const mirrorLine = document.getElementById('mirrorLine');
+      
+      if (isMirrorMode) {
+        btn.textContent = '🪞 Mirror On';
+        btn.classList.add('active');
+        mirrorLine.style.display = 'block';
+        updateMirrorLine();
+        showToolMessage('🪞 Mirror mode ON! Draw on one side to see it mirrored! ✨');
+      } else {
+        btn.textContent = '🪞 Mirror Off';
+        btn.classList.remove('active');
+        mirrorLine.style.display = 'none';
+        showToolMessage('🪞 Mirror mode OFF');
+      }
+    }
+
+    function toggleMirrorAxis() {
+      mirrorAxis = mirrorAxis === 'vertical' ? 'horizontal' : 'vertical';
+      const btn = document.getElementById('axis-btn');
+      
+      if (mirrorAxis === 'vertical') {
+        btn.textContent = '↕️ Vertical';
+      } else {
+        btn.textContent = '↔️ Horizontal';
+      }
+      
+      updateMirrorLine();
+      showToolMessage(`🪞 Mirror axis: ${mirrorAxis.toUpperCase()}`);
+    }
+
+    function updateMirrorPosition(position) {
+      mirrorPosition = position;
+      document.getElementById('mirrorPositionValue').textContent = position + '%';
+      updateMirrorLine();
+    }
+
+    function updateMirrorLine() {
+      const mirrorLine = document.getElementById('mirrorLine');
+      if (!mirrorLine || !isMirrorMode) return;
+      
+      if (mirrorAxis === 'vertical') {
+        mirrorLine.style.width = '2px';
+        mirrorLine.style.height = '100%';
+        mirrorLine.style.left = mirrorPosition + '%';
+        mirrorLine.style.top = '0';
+        mirrorLine.style.transform = 'translateX(-50%)';
+      } else {
+        mirrorLine.style.width = '100%';
+        mirrorLine.style.height = '2px';
+        mirrorLine.style.left = '0';
+        mirrorLine.style.top = mirrorPosition + '%';
+        mirrorLine.style.transform = 'translateY(-50%)';
+      }
+    }
+
+    function createMirrorPath(originalPath, canvas) {
+      if (!isMirrorMode || !originalPath) return null;
+      
+      // Clone the original path
+      const mirrorPath = fabric.util.object.clone(originalPath);
+      const canvasCenter = mirrorAxis === 'vertical' ? 
+        (CANVAS_WIDTH * mirrorPosition / 100) : 
+        (CANVAS_HEIGHT * mirrorPosition / 100);
+      
+      if (mirrorAxis === 'vertical') {
+        // Mirror horizontally across vertical line
+        const pathData = mirrorPath.path;
+        for (let i = 0; i < pathData.length; i++) {
+          if (pathData[i][1] !== undefined) { // x coordinate
+            const originalX = pathData[i][1];
+            pathData[i][1] = 2 * canvasCenter - originalX;
+          }
+        }
+      } else {
+        // Mirror vertically across horizontal line  
+        const pathData = mirrorPath.path;
+        for (let i = 0; i < pathData.length; i++) {
+          if (pathData[i][2] !== undefined) { // y coordinate
+            const originalY = pathData[i][2];
+            pathData[i][2] = 2 * canvasCenter - originalY;
+          }
+        }
+      }
+      
+      return mirrorPath;
+    }
+
+    // NEW - Lasso Fill Functions
+    function startLassoSelection(canvas, pointer) {
+      isLassoMode = true;
+      lassoStarted = true;
+      lassoPath = [pointer];
+      lassoCanvas = canvas;
+      
+      // Disable drawing mode temporarily
+      canvas.isDrawingMode = false;
+      
+      showToolMessage('🔗 Lasso selection started! Draw around the area to fill');
+    }
+
+    function updateLassoSelection(canvas, pointer) {
+      if (!isLassoMode || !lassoStarted) return;
+      
+      lassoPath.push(pointer);
+      drawLassoPreview(canvas);
+    }
+
+    function completeLassoSelection(canvas) {
+      if (!isLassoMode || !lassoStarted || lassoPath.length < 3) {
+        cancelLassoSelection();
+        return;
+      }
+      
+      // Create a polygon from the lasso path and fill it
+      const points = lassoPath.map(p => ({ x: p.x, y: p.y }));
+      
+      // Close the path if it's not already closed
+      const firstPoint = points[0];
+      const lastPoint = points[points.length - 1];
+      const distance = Math.sqrt(
+        Math.pow(firstPoint.x - lastPoint.x, 2) + 
+        Math.pow(firstPoint.y - lastPoint.y, 2)
+      );
+      
+      if (distance > 20) {
+        points.push(firstPoint); // Close the path
+      }
+      
+      // Create and add the filled shape
+      const polygon = new fabric.Polygon(points, {
+        fill: currentColor,
+        opacity: currentOpacity,
+        stroke: 'transparent',
+        strokeWidth: 0,
+        selectable: true,
+        evented: true
+      });
+      
+      canvas.add(polygon);
+      canvas.renderAll();
+      
+      // Clean up lasso selection
+      cancelLassoSelection();
+      saveState();
+      
+      showToolMessage('🔗 Lasso area filled with color! ✨');
+    }
+
+    function cancelLassoSelection() {
+      isLassoMode = false;
+      lassoStarted = false;
+      lassoPath = [];
+      lassoCanvas = null;
+      
+      // Clear any lasso preview
+      clearLassoPreview();
+    }
+
+    function drawLassoPreview(canvas) {
+      // This would ideally show a dotted line preview
+      // For simplicity, we'll skip the visual preview during drawing
+      // The final polygon will appear when selection is complete
+    }
+
+    function clearLassoPreview() {
+      // Clear any temporary lasso selection visuals
+      if (lassoCanvas) {
+        lassoCanvas.renderAll();
+      }
+    }
+
+    function setupEventListeners() {
+      // Window resize handler
+      window.addEventListener('resize', () => {
+        canvases.forEach(canvas => {
+          resizeCanvas(canvas);
+        });
+      });
+
+      // Mouse move for size indicator
+      document.addEventListener('mousemove', updateSizeIndicator);
+
+      // Enhanced keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          switch (e.key) {
+            case 'z':
+              e.preventDefault();
+              if (e.shiftKey) {
+                redoAction();
+              } else {
+                undoAction();
+              }
+              break;
+            case 'n':
+              e.preventDefault();
+              newProject();
+              break;
+            case 's':
+              e.preventDefault();
+              saveProject();
+              break;
+            case 'a':
+              e.preventDefault();
+              if (currentTool === 'move') {
+                selectAllObjects();
+              }
+              break;
+            case 'g':
+              e.preventDefault();
+              if (currentTool === 'move') {
+                groupAllObjects();
+              }
+              break;
+            case 'd':
+              e.preventDefault();
+              if (currentTool === 'move') {
+                duplicatePicture();
+              }
+              break;
+            case '=':
+            case '+':
+              e.preventDefault();
+              zoomIn();
+              break;
+            case '-':
+              e.preventDefault();
+              zoomOut();
+              break;
+            case 'm':
+              if (!e.altKey && !e.shiftKey) break;
+              e.preventDefault();
+              toggleMirrorMode();
+              break;
+          }
+        }
+        
+        // Tool shortcuts
+        switch (e.key) {
+          case 'b':
+            setTool('brush');
+            break;
+          case 'p':
+            if (!e.ctrlKey && !e.metaKey) setTool('paintbrush');
+            break;
+          case 'e':
+            if (!e.ctrlKey && !e.metaKey) setTool('eraser');
+            break;
+          case 'f':
+            setTool('fill');
+            break;
+          case 'l':
+            setTool('lasso');
+            break;
+          case 's':
+            if (!e.ctrlKey && !e.metaKey) setTool('spray');
+            break;
+          case 'm':
+            if (!e.ctrlKey && !e.metaKey) setTool('move');
+            break;
+          case 't':
+            setTool('text');
+            break;
+          case 'c':
+            if (!e.ctrlKey && !e.metaKey) setTool('calligraphy');
+            break;
+          case 'i':
+            setTool('image');
+            break;
+          case 'v':
+            if (currentTool === 'move') {
+              setTool('brush'); // Toggle back to drawing
+            }
+            break;
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+            const brushTypes = ['normal', 'texture', 'soft', 'hard'];
+            const brushType = brushTypes[parseInt(e.key) - 1];
+            if (brushType) setBrushType(brushType);
+            break;
+          case '[':
+            // Decrease brush size (enhanced for tiny sizes)
+            e.preventDefault();
+            let newSizeDown;
+            if (currentSize <= 1) {
+              newSizeDown = Math.max(0.1, currentSize - 0.1);
+            } else if (currentSize <= 5) {
+              newSizeDown = Math.max(0.1, currentSize - 0.5);
+            } else {
+              newSizeDown = Math.max(0.1, currentSize - 5);
+            }
+            updateBrushSize(newSizeDown);
+            document.getElementById('brushSize').value = newSizeDown;
+            break;
+          case ']':
+            // Increase brush size (enhanced for tiny sizes)
+            e.preventDefault();
+            let newSizeUp;
+            if (currentSize < 1) {
+              newSizeUp = Math.min(200, currentSize + 0.1);
+            } else if (currentSize < 5) {
+              newSizeUp = Math.min(200, currentSize + 0.5);
+            } else {
+              newSizeUp = Math.min(200, currentSize + 5);
+            }
+            updateBrushSize(newSizeUp);
+            document.getElementById('brushSize').value = newSizeUp;
+            break;
+          case 'Delete':
+          case 'Backspace':
+            if (e.ctrlKey) {
+              e.preventDefault();
+              clearCurrentLayer();
+            } else if (currentTool === 'move') {
+              deleteSelectedObjects();
+            }
+            break;
+          case 'Escape':
+            if (currentTool === 'move') {
+              clearSelection();
+            } else if (currentTool === 'lasso') {
+              cancelLassoSelection();
+            }
+            break;
+        }
+      });
+    }
+
+    function updateSizeIndicator(e) {
+      const indicator = document.getElementById('sizeIndicator');
+      const canvasContainer = document.getElementById('canvas-container');
+      const containerRect = canvasContainer.getBoundingClientRect();
+      
+      // Only show indicator when hovering over canvas
+      if (e.clientX >= containerRect.left && e.clientX <= containerRect.right &&
+          e.clientY >= containerRect.top && e.clientY <= containerRect.bottom) {
+        
+        if (currentTool === 'brush' || currentTool === 'paintbrush' || 
+            currentTool === 'pencil' || currentTool === 'eraser' || 
+            currentTool === 'spray' || currentTool === 'marker' || currentTool === 'calligraphy') {
+          
+          // Enhanced size calculation for tiny brushes
+          let displaySize = currentSize * (containerRect.width / CANVAS_WIDTH) * zoomLevel;
+          
+          // Ensure minimum visible size for tiny brushes
+          if (currentSize < 1) {
+            displaySize = Math.max(2, displaySize * 8); // Make tiny brushes more visible
+          } else if (currentSize < 3) {
+            displaySize = Math.max(4, displaySize * 2);
+          }
+          
+          indicator.style.width = displaySize + 'px';
+          indicator.style.height = displaySize + 'px';
+          indicator.style.left = (e.clientX - displaySize / 2) + 'px';
+          indicator.style.top = (e.clientY - displaySize / 2) + 'px';
+          indicator.style.display = 'block';
+          
+          // Change indicator color for different tools
+          if (currentTool === 'eraser') {
+            indicator.style.borderColor = '#ff4444';
+            indicator.style.background = 'radial-gradient(circle, rgba(255, 68, 68, 0.3), rgba(255, 68, 68, 0.1))';
+          } else if (currentTool === 'calligraphy') {
+            indicator.style.borderColor = '#8B4513';
+            indicator.style.background = 'radial-gradient(circle, rgba(139, 69, 19, 0.4), rgba(160, 82, 45, 0.2))';
+          } else if (currentSize < 1) {
+            // Special indicator for tiny brushes
+            indicator.style.borderColor = '#00ff00';
+            indicator.style.background = 'radial-gradient(circle, rgba(0, 255, 0, 0.4), rgba(0, 255, 0, 0.2))';
+            indicator.style.borderWidth = '2px';
+          } else {
+            indicator.style.borderColor = '#ff6b9d';
+            indicator.style.background = 'radial-gradient(circle, rgba(255, 107, 157, 0.3), rgba(78, 205, 196, 0.1))';
+            indicator.style.borderWidth = '3px';
+          }
+        } else {
+          indicator.style.display = 'none';
+        }
+      } else {
+        indicator.style.display = 'none';
+      }
+    }
+
+    function createInitialLayers() {
+      // Create 3 initial layers
+      for (let i = 0; i < 3; i++) {
+        createLayer(i);
+      }
+      
+      // Set first layer as active
+      setActiveLayer(0);
+    }
+
+    function createLayer(index) {
+      const container = document.getElementById('canvas-container');
+      const canvasEl = document.createElement('canvas');
+      
+      canvasEl.id = `canvas-${index}`;
+      canvasEl.style.position = 'absolute';
+      canvasEl.style.top = '0';
+      canvasEl.style.left = '0';
+      canvasEl.style.zIndex = index;
+      
+      container.appendChild(canvasEl);
+      
+      const fabricCanvas = new fabric.Canvas(canvasEl, {
+        width: CANVAS_WIDTH,
+        height: CANVAS_HEIGHT,
+        backgroundColor: index === 0 ? '#ffffff' : 'transparent'
+      });
+      
+      // Configure drawing settings for tiny brushes
+      fabricCanvas.freeDrawingBrush.width = currentSize;
+      fabricCanvas.freeDrawingBrush.color = currentColor;
+      fabricCanvas.isDrawingMode = false;
+      
+      // Enhanced drawing precision for tiny brushes
+      fabricCanvas.selection = true;
+      fabricCanvas.skipTargetFind = false;
+      
+      // Add drawing event listeners for undo/redo and mirror drawing
+      fabricCanvas.on('path:created', function(e) {
+        saveState();
+        
+        // Create mirror path if mirror mode is enabled
+        if (isMirrorMode && e.path) {
+          const mirrorPath = createMirrorPath(e.path, fabricCanvas);
+          if (mirrorPath) {
+            fabricCanvas.add(mirrorPath);
+            fabricCanvas.renderAll();
+          }
+        }
+      });
+
+      // Add object modification listener
+      fabricCanvas.on('object:modified', function() {
+        saveState();
+        updatePictureControls();
+      });
+
+      // Selection events for picture manipulation
+      fabricCanvas.on('selection:created', function(e) {
+        if (currentTool === 'move') {
+          handleObjectSelection(e);
+        }
+      });
+
+      fabricCanvas.on('selection:updated', function(e) {
+        if (currentTool === 'move') {
+          handleObjectSelection(e);
+        }
+      });
+
+      fabricCanvas.on('selection:cleared', function(e) {
+        if (currentTool === 'move') {
+          clearPictureSelection();
+        }
+      });
+
+      // Enhanced mouse event handlers for lasso and other tools
+      fabricCanvas.on('mouse:down', function(options) {
+        if (currentTool === 'fill') {
+          handleFillClick(options, fabricCanvas);
+        } else if (currentTool === 'text' || currentTool === 'calligraphy') {
+          handleTextClick(options, fabricCanvas);
+        } else if (currentTool === 'image') {
+          handleImageClick(options, fabricCanvas);
+        } else if (currentTool === 'lasso') {
+          const pointer = fabricCanvas.getPointer(options.e);
+          startLassoSelection(fabricCanvas, pointer);
+        }
+      });
+
+      fabricCanvas.on('mouse:move', function(options) {
+        if (currentTool === 'lasso' && lassoStarted) {
+          const pointer = fabricCanvas.getPointer(options.e);
+          updateLassoSelection(fabricCanvas, pointer);
+        }
+      });
+
+      fabricCanvas.on('mouse:up', function(options) {
+        if (currentTool === 'lasso' && lassoStarted) {
+          completeLassoSelection(fabricCanvas);
+        }
+      });
+      
+      canvases[index] = fabricCanvas;
+      
+      // Resize canvas to fit container
+      resizeCanvas(fabricCanvas);
+    }
+
+    function setupCanvasContainer() {
+      const container = document.getElementById('canvas-container');
+      
+      // Make sure all canvases fit the container
+      canvases.forEach(canvas => {
+        resizeCanvas(canvas);
+      });
+    }
+
+    function resizeCanvas(canvas) {
+      const container = document.getElementById('canvas-container');
+      const containerRect = container.getBoundingClientRect();
+      
+      const scaleX = containerRect.width / CANVAS_WIDTH;
+      const scaleY = containerRect.height / CANVAS_HEIGHT;
+      const scale = Math.min(scaleX, scaleY);
+      
+      canvas.setDimensions({
+        width: CANVAS_WIDTH * scale,
+        height: CANVAS_HEIGHT * scale
+      });
+      
+      canvas.setZoom(scale * zoomLevel);
+    }
+
+    // Picture Manipulation Functions
+    function handleObjectSelection(e) {
+      selectedObjects = e.selected || [];
+      updatePictureControls();
+      showToolMessage(`Selected ${selectedObjects.length} object(s) for animation!`);
+    }
+
+    function clearPictureSelection() {
+      selectedObjects = [];
+      currentGroup = null;
+      updatePictureControls();
+    }
+
+    function updatePictureControls() {
+      if (selectedObjects.length > 0 && currentTool === 'move') {
+        const activeCanvas = canvases[currentLayerIndex];
+        const selectedObj = activeCanvas.getActiveObject();
+        
+        if (selectedObj) {
+          // Update sliders based on selected object
+          const scaleX = selectedObj.scaleX || 1;
+          const scaleY = selectedObj.scaleY || 1;
+          const avgScale = (scaleX + scaleY) / 2;
+          const scalePercent = Math.round(avgScale * 100);
+          
+          document.getElementById('pictureScale').value = scalePercent;
+          document.getElementById('pictureScaleValue').textContent = scalePercent + '%';
+          
+          const angle = selectedObj.angle || 0;
+          document.getElementById('pictureRotation').value = Math.round(angle);
+          document.getElementById('pictureRotationValue').textContent = Math.round(angle) + '°';
+          
+          const opacity = (selectedObj.opacity || 1) * 100;
+          document.getElementById('pictureOpacity').value = Math.round(opacity);
+          document.getElementById('pictureOpacityValue').textContent = Math.round(opacity) + '%';
+        }
+      }
+    }
+
+    function groupAllObjects() {
+      const activeCanvas = canvases[currentLayerIndex];
+      const objects = activeCanvas.getObjects();
+      
+      if (objects.length < 2) {
+        showToolMessage('Need at least 2 objects to group!');
+        return;
+      }
+      
+      // Select all objects
+      const selection = new fabric.ActiveSelection(objects, {
+        canvas: activeCanvas,
+      });
+      
+      activeCanvas.setActiveObject(selection);
+      
+      // Group them
+      const group = selection.toGroup();
+      group.set({
+        selectable: true,
+        evented: true,
+        lockMovementX: false,
+        lockMovementY: false
+      });
+      
+      activeCanvas.renderAll();
+      currentGroup = group;
+      selectedObjects = [group];
+      updatePictureControls();
+      saveState();
+      
+      showToolMessage('All objects grouped! Perfect for animation!');
+    }<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -229,6 +2704,57 @@
       color: #4ecdc4;
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
       text-align: center;
+    }
+
+    /* NEW - Mirror and Lasso Effects Section */
+    .effects-section {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(75, 0, 130, 0.2));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .effects-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .effects-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .effects-btn {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.5), rgba(75, 0, 130, 0.3));
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      padding: 10px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-align: center;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .effects-btn:hover {
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.7), rgba(75, 0, 130, 0.5));
+      transform: scale(1.05);
+      border-color: #DA70D6;
+    }
+
+    .effects-btn.active {
+      border-color: #DA70D6;
+      background: linear-gradient(135deg, rgba(138, 43, 226, 0.8), rgba(75, 0, 130, 0.6));
+      box-shadow: 0 0 15px rgba(218, 112, 214, 0.5);
     }
 
     /* Picture Manipulation Section */
@@ -819,6 +3345,10 @@
       cursor: move !important;
     }
 
+    .lasso-cursor {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="purple" stroke-width="3" stroke-dasharray="4,2"/><circle cx="16" cy="16" r="2" fill="purple"/></svg>'), auto !important;
+    }
+
     /* Tool size indicator - Enhanced */
     .size-indicator {
       position: fixed;
@@ -887,6 +3417,36 @@
     /* File input styling */
     .file-input {
       display: none;
+    }
+
+    /* Lasso selection area */
+    .lasso-selection {
+      position: absolute;
+      border: 3px dashed #DA70D6;
+      background: rgba(218, 112, 214, 0.1);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    /* Mirror line indicator */
+    .mirror-line {
+      position: absolute;
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(to bottom, #ff6b9d, #4ecdc4);
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      z-index: 500;
+      opacity: 0.5;
+      box-shadow: 0 0 10px rgba(255, 107, 157, 0.6);
+      animation: mirrorPulse 2s ease-in-out infinite;
+      display: none;
+    }
+
+    @keyframes mirrorPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
     }
 
     /* Mobile responsiveness - Improved */
@@ -1022,2361 +3582,3 @@
       border: 4px solid #FFD700 !important;
       box-shadow: 0 0 20px rgba(255, 215, 0, 0.6) !important;
     }
-  </style>
-</head>
-<body>
-  <div class="loading" id="loadingScreen">
-    <div class="loading-spinner"></div>
-    <div>Loading Silly Paintings Painting World...</div>
-    <div style="font-size: 16px; margin-top: 15px; opacity: 0.8;">Get ready to create something silly and beautiful! ✨</div>
-  </div>
-
-  <div class="header">
-    <div class="logo">Silly Paintings Painting World!</div>
-    <div class="header-actions">
-      <button class="header-btn" onclick="newProject()">🆕 New Canvas</button>
-      <button class="header-btn" onclick="saveProject()">💾 Save Art</button>
-      <button class="header-btn" onclick="loadProject()">📂 Load Art</button>
-      <button class="header-btn" onclick="exportPNG()">📷 Download</button>
-    </div>
-  </div>
-
-  <div class="main-container">
-    <div class="left-sidebar">
-      <button class="tool-btn active" onclick="setTool('brush')" title="Brush Tool" id="brush-tool">
-        🖌️
-      </button>
-      <button class="tool-btn" onclick="setTool('paintbrush')" title="Paint Brush" id="paintbrush-tool">
-        🎨
-      </button>
-      <button class="tool-btn" onclick="setTool('pencil')" title="Pencil Tool" id="pencil-tool">
-        ✏️
-      </button>
-      <button class="tool-btn" onclick="setTool('calligraphy')" title="Calligraphy Tool" id="calligraphy-tool">
-        ✒️
-      </button>
-      <button class="tool-btn" onclick="setTool('text')" title="Text Tool" id="text-tool">
-        📝
-      </button>
-      <button class="tool-btn" onclick="setTool('image')" title="Insert Image" id="image-tool">
-        🖼️
-      </button>
-      <button class="tool-btn" onclick="setTool('move')" title="Move/Select Pictures" id="move-tool">
-        ↔️
-      </button>
-      <button class="tool-btn" onclick="setTool('eraser')" title="Eraser Tool" id="eraser-tool">
-        🧹
-      </button>
-      <button class="tool-btn" onclick="setTool('fill')" title="Fill Bucket" id="fill-tool">
-        🪣
-      </button>
-      <button class="tool-btn" onclick="setTool('spray')" title="Spray Paint" id="spray-tool">
-        💨
-      </button>
-      <button class="tool-btn" onclick="setTool('marker')" title="Marker Tool" id="marker-tool">
-        🖍️
-      </button>
-    </div>
-
-    <div class="canvas-area">
-      <div id="canvas-container"></div>
-      <div class="size-indicator" id="sizeIndicator"></div>
-    </div>
-
-    <div class="right-sidebar">
-      <div class="sidebar-section" id="pictureSection" style="display: none;">
-        <div class="sidebar-title">🎬 Picture Animation</div>
-        <div class="picture-section">
-          <div class="picture-title">📐 Picture Tools</div>
-          <div class="picture-controls">
-            <button class="picture-btn" onclick="groupAllObjects()" id="group-btn">📦 Group All</button>
-            <button class="picture-btn" onclick="ungroupSelected()" id="ungroup-btn">📂 Ungroup</button>
-            <button class="picture-btn" onclick="duplicatePicture()" id="duplicate-btn">📋 Duplicate</button>
-            <button class="picture-btn" onclick="flipPicture('horizontal')" id="flip-h-btn">↔️ Flip H</button>
-            <button class="picture-btn" onclick="flipPicture('vertical')" id="flip-v-btn">↕️ Flip V</button>
-            <button class="picture-btn" onclick="rotatePicture()" id="rotate-btn">🔄 Rotate</button>
-          </div>
-          
-          <div class="slider-container">
-            <div class="slider-label">
-              <span>📏 Picture Size</span>
-              <span id="pictureScaleValue">100%</span>
-            </div>
-            <input type="range" class="slider" id="pictureScale" min="10" max="500" step="5" value="100" oninput="scalePicture(this.value)">
-          </div>
-          
-          <div class="slider-container">
-            <div class="slider-label">
-              <span>🔄 Rotation</span>
-              <span id="pictureRotationValue">0°</span>
-            </div>
-            <input type="range" class="slider" id="pictureRotation" min="0" max="360" step="1" value="0" oninput="rotatePictureSlider(this.value)">
-          </div>
-          
-          <div class="slider-container">
-            <div class="slider-label">
-              <span>👻 Transparency</span>
-              <span id="pictureOpacityValue">100%</span>
-            </div>
-            <input type="range" class="slider" id="pictureOpacity" min="10" max="100" step="5" value="100" oninput="changePictureOpacity(this.value)">
-          </div>
-        </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-title">🌈 Colors</div>
-        <div class="color-grid">
-          <div class="color-btn active" style="background: #000;" onclick="selectColor('#000000')" title="Black"></div>
-          <div class="color-btn" style="background: #fff;" onclick="selectColor('#ffffff')" title="White"></div>
-          <div class="color-btn" style="background: #ff0000;" onclick="selectColor('#ff0000')" title="Red"></div>
-          <div class="color-btn" style="background: #00ff00;" onclick="selectColor('#00ff00')" title="Green"></div>
-          <div class="color-btn" style="background: #0000ff;" onclick="selectColor('#0000ff')" title="Blue"></div>
-          <div class="color-btn" style="background: #ffff00;" onclick="selectColor('#ffff00')" title="Yellow"></div>
-          <div class="color-btn" style="background: #ff00ff;" onclick="selectColor('#ff00ff')" title="Magenta"></div>
-          <div class="color-btn" style="background: #00ffff;" onclick="selectColor('#00ffff')" title="Cyan"></div>
-          <div class="color-btn" style="background: #ffa500;" onclick="selectColor('#ffa500')" title="Orange"></div>
-          <div class="color-btn" style="background: #800080;" onclick="selectColor('#800080')" title="Purple"></div>
-          <div class="color-btn" style="background: #ffc0cb;" onclick="selectColor('#ffc0cb')" title="Pink"></div>
-          <div class="color-btn" style="background: #90ee90;" onclick="selectColor('#90ee90')" title="Light Green"></div>
-        </div>
-        <input type="color" id="colorPicker" value="#000000" onchange="selectColor(this.value)">
-        
-        <div class="hex-input-container">
-          <label for="hexInput">Hex Code:</label>
-          <input type="text" id="hexInput" placeholder="#000000" oninput="handleHexInput(event)">
-        </div>
-      </div>
-
-      <div class="sidebar-section" id="calligraphySection" style="display: none;">
-        <div class="sidebar-title">✒️ Calligraphy</div>
-        <div class="calligraphy-section">
-          <div class="calligraphy-title">📜 Calligraphy Fonts</div>
-          <div class="font-grid">
-            <button class="font-btn active dancing-script" onclick="setCalligraphyFont('Dancing Script')" id="font-dancing">Dancing</button>
-            <button class="font-btn great-vibes" onclick="setCalligraphyFont('Great Vibes')" id="font-vibes">Vibes</button>
-            <button class="font-btn kalam" onclick="setCalligraphyFont('Kalam')" id="font-kalam">Kalam</button>
-            <button class="font-btn pacifico" onclick="setCalligraphyFont('Pacifico')" id="font-pacifico">Pacific</button>
-          </div>
-          <div class="text-input-container">
-            <input type="text" id="calligraphyText" placeholder="Enter text for calligraphy..." onkeypress="handleCalligraphyEnter(event)">
-          </div>
-        </div>
-      </div>
-
-      <div class="sidebar-section" id="imageSection" style="display: none;">
-        <div class="sidebar-title">🖼️ Images</div>
-        <div class="image-section">
-          <div class="image-title">📸 Image Tools</div>
-          <div class="image-controls">
-            <button class="image-btn" onclick="insertImageFromFile()">📁 Upload Image</button>
-            <button class="image-btn" onclick="insertImageFromURL()">🌐 From URL</button>
-            <button class="image-btn" onclick="insertEmojiImage()">😀 Insert Emoji</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-title">🖌️ Brush Settings</div>
-        <div class="brush-preview">
-          <div class="brush-stroke" id="brushPreview"></div>
-          <div class="size-display" id="sizeDisplay">15px</div>
-        </div>
-        
-        <div class="tiny-brush-section">
-          <div class="tiny-brush-title">🔬 Tiny Brushes</div>
-          <div class="tiny-brush-grid">
-            <button class="tiny-brush-btn" onclick="setTinyBrush(0.1)" id="tiny-01">0.1px</button>
-            <button class="tiny-brush-btn" onclick="setTinyBrush(0.2)" id="tiny-02">0.2px</button>
-            <button class="tiny-brush-btn" onclick="setTinyBrush(0.3)" id="tiny-03">0.3px</button>
-            <button class="tiny-brush-btn" onclick="setTinyBrush(0.5)" id="tiny-05">0.5px</button>
-            <button class="tiny-brush-btn" onclick="setTinyBrush(0.7)" id="tiny-07">0.7px</button>
-            <button class="tiny-brush-btn" onclick="setTinyBrush(0.8)" id="tiny-08">0.8px</button>
-          </div>
-        </div>
-        
-        <div class="brush-controls">
-          <button class="brush-type-btn active" onclick="setBrushType('normal')" id="normal-brush">Normal</button>
-          <button class="brush-type-btn" onclick="setBrushType('texture')" id="texture-brush">Textured</button>
-          <button class="brush-type-btn" onclick="setBrushType('soft')" id="soft-brush">Soft</button>
-          <button class="brush-type-btn" onclick="setBrushType('hard')" id="hard-brush">Hard</button>
-        </div>
-        
-        <div class="slider-container">
-          <div class="slider-label">
-            <span>📏 Size</span>
-            <span id="sizeValue">15</span>
-          </div>
-          <input type="range" class="slider" id="brushSize" min="0.1" max="200" step="0.1" value="15" oninput="updateBrushSize(this.value)">
-        </div>
-        
-        <div class="slider-container">
-          <div class="slider-label">
-            <span>💧 Opacity</span>
-            <span id="opacityValue">100%</span>
-          </div>
-          <input type="range" class="slider" id="brushOpacity" min="1" max="100" value="100" oninput="updateOpacity(this.value)">
-        </div>
-        
-        <div class="slider-container">
-          <div class="slider-label">
-            <span>🌊 Flow</span>
-            <span id="flowValue">100%</span>
-          </div>
-          <input type="range" class="slider" id="brushFlow" min="1" max="100" value="100" oninput="updateFlow(this.value)">
-        </div>
-        
-        <div class="slider-container">
-          <div class="slider-label">
-            <span>⚡ Hardness</span>
-            <span id="hardnessValue">100%</span>
-          </div>
-          <input type="range" class="slider" id="brushHardness" min="0" max="100" value="100" oninput="updateHardness(this.value)">
-        </div>
-        
-        <div class="pressure-indicator" title="Brush Pressure">
-          <div class="pressure-bar" id="pressureBar"></div>
-        </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-title">📚 Drawing Layers</div>
-        <div class="layers-panel" id="layersPanel">
-        </div>
-        <button class="header-btn" onclick="addLayer()" style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #4ecdc4, #45b7d1);">➕ Add New Layer</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="bottom-toolbar">
-    <div class="zoom-controls">
-      <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
-      <div class="zoom-level" id="zoomLevel">100%</div>
-      <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
-    </div>
-    <button class="action-btn undo" onclick="undoAction()" title="Undo Last Action">↶ Undo</button>
-    <button class="action-btn redo" onclick="redoAction()" title="Redo Last Action">↷ Redo</button>
-    <button class="action-btn clear" onclick="clearCurrentLayer()" title="Clear Current Layer">🧼 Clear Layer</button>
-  </div>
-  
-  <div id="autosave-status"></div>
-
-  <input type="file" id="fileInput" class="file-input" accept=".json" onchange="handleFileLoad(event)">
-  <input type="file" id="imageFileInput" class="file-input" accept="image/*" onchange="handleImageFileLoad(event)">
-
-  <script>
-    // Global variables
-    let canvases = [];
-    let currentLayerIndex = 0;
-    let currentTool = 'brush';
-    let currentBrushType = 'normal';
-    let currentColor = '#000000';
-    let currentSize = 15;
-    let currentOpacity = 1.0;
-    let currentFlow = 1.0;
-    let currentHardness = 1.0;
-    let zoomLevel = 1.0;
-    let isDrawing = false;
-    let undoStack = [];
-    let redoStack = [];
-    let pressureSimulation = 0.5;
-    let isMouseDown = false;
-    let isTinyBrushActive = false;
-    let currentCalligraphyFont = 'Dancing Script';
-    let isImageMode = false;
-    
-    // Picture manipulation variables
-    let selectedObjects = [];
-    let currentGroup = null;
-    let isMovingPicture = false;
-    let lastSelectedGroup = null;
-    
-    // Canvas settings - Maximized for students
-    const CANVAS_WIDTH = 1400;
-    const CANVAS_HEIGHT = 900;
-    const MAX_LAYERS = 10;
-    const AUTOSAVE_INTERVAL = 60000; // 1 minute in milliseconds
-    const LOCAL_STORAGE_KEY = 'silly_paintings_autosave';
-
-    // Initialize the application
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(() => {
-        initializeApp();
-        document.getElementById('loadingScreen').style.display = 'none';
-      }, 2000);
-    });
-
-    function initializeApp() {
-      // Check for and load auto-saved data first
-      loadAutoSavedProject();
-      
-      // If no auto-saved data, create initial layers
-      if (canvases.length === 0) {
-        createInitialLayers();
-      }
-
-      setupCanvasContainer();
-      updateLayersPanel();
-      updateBrushPreview();
-      setupEventListeners();
-      showWelcomeMessage();
-      
-      // Start auto-save
-      setInterval(autoSave, AUTOSAVE_INTERVAL);
-    }
-
-    function showWelcomeMessage() {
-      setTimeout(() => {
-        alert('🎨 Welcome to Silly Paintings Painting World! 🎨\n\n✨ NEW Animation Features:\n• ↔️ Move Tool: Select and move entire pictures\n• 📦 Group drawings together for easy manipulation\n• 📏 Resize pictures with the scale slider\n• 🔄 Rotate pictures for dynamic animations\n• 👻 Adjust transparency for layered effects\n• 📋 Duplicate pictures for frame-by-frame animation\n\n🎬 Perfect for creating:\n• Animated characters\n• Moving objects\n• Frame-by-frame animations\n• Dynamic compositions\n\n💡 Animation Tips:\n• Draw a character, group it, then duplicate and move\n• Use layers for different animation frames\n• Adjust transparency to see previous frames\n• Save frequently to preserve your animation work!\n\nHappy animating! 🌈✨');
-      }, 1000);
-    }
-
-    function setupEventListeners() {
-      // Window resize handler
-      window.addEventListener('resize', () => {
-        canvases.forEach(canvas => {
-          resizeCanvas(canvas);
-        });
-      });
-
-      // Mouse move for size indicator
-      document.addEventListener('mousemove', updateSizeIndicator);
-
-      // Enhanced keyboard shortcuts
-      document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          switch (e.key) {
-            case 'z':
-              e.preventDefault();
-              if (e.shiftKey) {
-                redoAction();
-              } else {
-                undoAction();
-              }
-              break;
-            case 'n':
-              e.preventDefault();
-              newProject();
-              break;
-            case 's':
-              e.preventDefault();
-              saveProject();
-              break;
-            case 'a':
-              e.preventDefault();
-              if (currentTool === 'move') {
-                selectAllObjects();
-              }
-              break;
-            case 'g':
-              e.preventDefault();
-              if (currentTool === 'move') {
-                groupAllObjects();
-              }
-              break;
-            case 'd':
-              e.preventDefault();
-              if (currentTool === 'move') {
-                duplicatePicture();
-              }
-              break;
-            case '=':
-            case '+':
-              e.preventDefault();
-              zoomIn();
-              break;
-            case '-':
-              e.preventDefault();
-              zoomOut();
-              break;
-          }
-        }
-        
-        // Tool shortcuts
-        switch (e.key) {
-          case 'b':
-            setTool('brush');
-            break;
-          case 'p':
-            if (!e.ctrlKey && !e.metaKey) setTool('paintbrush');
-            break;
-          case 'e':
-            if (!e.ctrlKey && !e.metaKey) setTool('eraser');
-            break;
-          case 'f':
-            setTool('fill');
-            break;
-          case 's':
-            if (!e.ctrlKey && !e.metaKey) setTool('spray');
-            break;
-          case 'm':
-            setTool('move');
-            break;
-          case 't':
-            setTool('text');
-            break;
-          case 'c':
-            if (!e.ctrlKey && !e.metaKey) setTool('calligraphy');
-            break;
-          case 'i':
-            setTool('image');
-            break;
-          case 'v':
-            if (currentTool === 'move') {
-              setTool('brush'); // Toggle back to drawing
-            }
-            break;
-          case '1':
-          case '2':
-          case '3':
-          case '4':
-            const brushTypes = ['normal', 'texture', 'soft', 'hard'];
-            const brushType = brushTypes[parseInt(e.key) - 1];
-            if (brushType) setBrushType(brushType);
-            break;
-          case '[':
-            // Decrease brush size (enhanced for tiny sizes)
-            e.preventDefault();
-            let newSizeDown;
-            if (currentSize <= 1) {
-              newSizeDown = Math.max(0.1, currentSize - 0.1);
-            } else if (currentSize <= 5) {
-              newSizeDown = Math.max(0.1, currentSize - 0.5);
-            } else {
-              newSizeDown = Math.max(0.1, currentSize - 5);
-            }
-            updateBrushSize(newSizeDown);
-            document.getElementById('brushSize').value = newSizeDown;
-            break;
-          case ']':
-            // Increase brush size (enhanced for tiny sizes)
-            e.preventDefault();
-            let newSizeUp;
-            if (currentSize < 1) {
-              newSizeUp = Math.min(200, currentSize + 0.1);
-            } else if (currentSize < 5) {
-              newSizeUp = Math.min(200, currentSize + 0.5);
-            } else {
-              newSizeUp = Math.min(200, currentSize + 5);
-            }
-            updateBrushSize(newSizeUp);
-            document.getElementById('brushSize').value = newSizeUp;
-            break;
-          case 'Delete':
-          case 'Backspace':
-            if (e.ctrlKey) {
-              e.preventDefault();
-              clearCurrentLayer();
-            } else if (currentTool === 'move') {
-              deleteSelectedObjects();
-            }
-            break;
-          case 'Escape':
-            if (currentTool === 'move') {
-              clearSelection();
-            }
-            break;
-        }
-      });
-    }
-
-    function updateSizeIndicator(e) {
-      const indicator = document.getElementById('sizeIndicator');
-      const canvasContainer = document.getElementById('canvas-container');
-      const containerRect = canvasContainer.getBoundingClientRect();
-      
-      // Only show indicator when hovering over canvas
-      if (e.clientX >= containerRect.left && e.clientX <= containerRect.right &&
-          e.clientY >= containerRect.top && e.clientY <= containerRect.bottom) {
-        
-        if (currentTool === 'brush' || currentTool === 'paintbrush' || 
-            currentTool === 'pencil' || currentTool === 'eraser' || 
-            currentTool === 'spray' || currentTool === 'marker' || currentTool === 'calligraphy') {
-          
-          // Enhanced size calculation for tiny brushes
-          let displaySize = currentSize * (containerRect.width / CANVAS_WIDTH) * zoomLevel;
-          
-          // Ensure minimum visible size for tiny brushes
-          if (currentSize < 1) {
-            displaySize = Math.max(2, displaySize * 8); // Make tiny brushes more visible
-          } else if (currentSize < 3) {
-            displaySize = Math.max(4, displaySize * 2);
-          }
-          
-          indicator.style.width = displaySize + 'px';
-          indicator.style.height = displaySize + 'px';
-          indicator.style.left = (e.clientX - displaySize / 2) + 'px';
-          indicator.style.top = (e.clientY - displaySize / 2) + 'px';
-          indicator.style.display = 'block';
-          
-          // Change indicator color for different tools
-          if (currentTool === 'eraser') {
-            indicator.style.borderColor = '#ff4444';
-            indicator.style.background = 'radial-gradient(circle, rgba(255, 68, 68, 0.3), rgba(255, 68, 68, 0.1))';
-          } else if (currentTool === 'calligraphy') {
-            indicator.style.borderColor = '#8B4513';
-            indicator.style.background = 'radial-gradient(circle, rgba(139, 69, 19, 0.4), rgba(160, 82, 45, 0.2))';
-          } else if (currentSize < 1) {
-            // Special indicator for tiny brushes
-            indicator.style.borderColor = '#00ff00';
-            indicator.style.background = 'radial-gradient(circle, rgba(0, 255, 0, 0.4), rgba(0, 255, 0, 0.2))';
-            indicator.style.borderWidth = '2px';
-          } else {
-            indicator.style.borderColor = '#ff6b9d';
-            indicator.style.background = 'radial-gradient(circle, rgba(255, 107, 157, 0.3), rgba(78, 205, 196, 0.1))';
-            indicator.style.borderWidth = '3px';
-          }
-        } else {
-          indicator.style.display = 'none';
-        }
-      } else {
-        indicator.style.display = 'none';
-      }
-    }
-
-    function createInitialLayers() {
-      // Create 3 initial layers
-      for (let i = 0; i < 3; i++) {
-        createLayer(i);
-      }
-      
-      // Set first layer as active
-      setActiveLayer(0);
-    }
-
-    function createLayer(index) {
-      const container = document.getElementById('canvas-container');
-      const canvasEl = document.createElement('canvas');
-      
-      canvasEl.id = `canvas-${index}`;
-      canvasEl.style.position = 'absolute';
-      canvasEl.style.top = '0';
-      canvasEl.style.left = '0';
-      canvasEl.style.zIndex = index;
-      
-      container.appendChild(canvasEl);
-      
-      const fabricCanvas = new fabric.Canvas(canvasEl, {
-        width: CANVAS_WIDTH,
-        height: CANVAS_HEIGHT,
-        backgroundColor: index === 0 ? '#ffffff' : 'transparent'
-      });
-      
-      // Configure drawing settings for tiny brushes
-      fabricCanvas.freeDrawingBrush.width = currentSize;
-      fabricCanvas.freeDrawingBrush.color = currentColor;
-      fabricCanvas.isDrawingMode = false;
-      
-      // Enhanced drawing precision for tiny brushes
-      fabricCanvas.selection = true;
-      fabricCanvas.skipTargetFind = false;
-      
-      // Add drawing event listeners for undo/redo
-      fabricCanvas.on('path:created', function() {
-        saveState();
-      });
-
-      // Add object modification listener
-      fabricCanvas.on('object:modified', function() {
-        saveState();
-        updatePictureControls();
-      });
-
-      // Selection events for picture manipulation
-      fabricCanvas.on('selection:created', function(e) {
-        if (currentTool === 'move') {
-          handleObjectSelection(e);
-        }
-      });
-
-      fabricCanvas.on('selection:updated', function(e) {
-        if (currentTool === 'move') {
-          handleObjectSelection(e);
-        }
-      });
-
-      fabricCanvas.on('selection:cleared', function(e) {
-        if (currentTool === 'move') {
-          clearPictureSelection();
-        }
-      });
-
-      // Add fill tool click handler
-      fabricCanvas.on('mouse:down', function(options) {
-        if (currentTool === 'fill') {
-          handleFillClick(options, fabricCanvas);
-        } else if (currentTool === 'text' || currentTool === 'calligraphy') {
-          handleTextClick(options, fabricCanvas);
-        } else if (currentTool === 'image') {
-          handleImageClick(options, fabricCanvas);
-        }
-      });
-      
-      canvases[index] = fabricCanvas;
-      
-      // Resize canvas to fit container
-      resizeCanvas(fabricCanvas);
-    }
-
-    function setupCanvasContainer() {
-      const container = document.getElementById('canvas-container');
-      
-      // Make sure all canvases fit the container
-      canvases.forEach(canvas => {
-        resizeCanvas(canvas);
-      });
-    }
-
-    function resizeCanvas(canvas) {
-      const container = document.getElementById('canvas-container');
-      const containerRect = container.getBoundingClientRect();
-      
-      const scaleX = containerRect.width / CANVAS_WIDTH;
-      const scaleY = containerRect.height / CANVAS_HEIGHT;
-      const scale = Math.min(scaleX, scaleY);
-      
-      canvas.setDimensions({
-        width: CANVAS_WIDTH * scale,
-        height: CANVAS_HEIGHT * scale
-      });
-      
-      canvas.setZoom(scale * zoomLevel);
-    }
-
-    // Picture Manipulation Functions
-    function handleObjectSelection(e) {
-      selectedObjects = e.selected || [];
-      updatePictureControls();
-      showToolMessage(`🎯 Selected ${selectedObjects.length} object(s) for animation!`);
-    }
-
-    function clearPictureSelection() {
-      selectedObjects = [];
-      currentGroup = null;
-      updatePictureControls();
-    }
-
-    function updatePictureControls() {
-      if (selectedObjects.length > 0 && currentTool === 'move') {
-        const activeCanvas = canvases[currentLayerIndex];
-        const selectedObj = activeCanvas.getActiveObject();
-        
-        if (selectedObj) {
-          // Update sliders based on selected object
-          const scaleX = selectedObj.scaleX || 1;
-          const scaleY = selectedObj.scaleY || 1;
-          const avgScale = (scaleX + scaleY) / 2;
-          const scalePercent = Math.round(avgScale * 100);
-          
-          document.getElementById('pictureScale').value = scalePercent;
-          document.getElementById('pictureScaleValue').textContent = scalePercent + '%';
-          
-          const angle = selectedObj.angle || 0;
-          document.getElementById('pictureRotation').value = Math.round(angle);
-          document.getElementById('pictureRotationValue').textContent = Math.round(angle) + '°';
-          
-          const opacity = (selectedObj.opacity || 1) * 100;
-          document.getElementById('pictureOpacity').value = Math.round(opacity);
-          document.getElementById('pictureOpacityValue').textContent = Math.round(opacity) + '%';
-        }
-      }
-    }
-
-    function groupAllObjects() {
-      const activeCanvas = canvases[currentLayerIndex];
-      const objects = activeCanvas.getObjects();
-      
-      if (objects.length < 2) {
-        showToolMessage('🚫 Need at least 2 objects to group!');
-        return;
-      }
-      
-      // Select all objects
-      const selection = new fabric.ActiveSelection(objects, {
-        canvas: activeCanvas,
-      });
-      
-      activeCanvas.setActiveObject(selection);
-      
-      // Group them
-      const group = selection.toGroup();
-      group.set({
-        selectable: true,
-        evented: true,
-        lockMovementX: false,
-        lockMovementY: false
-      });
-      
-      activeCanvas.renderAll();
-      currentGroup = group;
-      selectedObjects = [group];
-      updatePictureControls();
-      saveState();
-      
-      showToolMessage('📦 All objects grouped! Perfect for animation! ✨');
-    }
-
-    function ungroupSelected() {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj || activeObj.type !== 'group') {
-        showToolMessage('🚫 Please select a group to ungroup!');
-        return;
-      }
-      
-      // Ungroup the selected group
-      const items = activeObj.toActiveSelection();
-      activeCanvas.renderAll();
-      
-      selectedObjects = [];
-      currentGroup = null;
-      saveState();
-      
-      showToolMessage('📂 Group ungrouped successfully!');
-    }
-
-    function duplicatePicture() {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj) {
-        showToolMessage('🚫 Please select an object or group to duplicate!');
-        return;
-      }
-      
-      activeObj.clone(function(cloned) {
-        cloned.set({
-          left: cloned.left + 20,
-          top: cloned.top + 20,
-          evented: true,
-          selectable: true
-        });
-        
-        if (cloned.type === 'activeSelection') {
-          // Handle active selection
-          cloned.canvas = activeCanvas;
-          cloned.forEachObject(function(obj) {
-            activeCanvas.add(obj);
-          });
-          cloned.setCoords();
-        } else {
-          activeCanvas.add(cloned);
-        }
-        
-        activeCanvas.setActiveObject(cloned);
-        activeCanvas.renderAll();
-        
-        selectedObjects = [cloned];
-        updatePictureControls();
-        saveState();
-        
-        showToolMessage('📋 Picture duplicated! Perfect for animation frames! ✨');
-      });
-    }
-
-    function scalePicture(scalePercent) {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj) {
-        showToolMessage('🚫 Please select an object to scale!');
-        return;
-      }
-      
-      const scale = scalePercent / 100;
-      activeObj.set({
-        scaleX: scale,
-        scaleY: scale
-      });
-      
-      activeObj.setCoords();
-      activeCanvas.renderAll();
-      
-      document.getElementById('pictureScaleValue').textContent = scalePercent + '%';
-      
-      if (scalePercent !== 100) {
-        showToolMessage(`📏 Picture scaled to ${scalePercent}%!`);
-      }
-    }
-
-    function rotatePictureSlider(angle) {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj) {
-        showToolMessage('🚫 Please select an object to rotate!');
-        return;
-      }
-      
-      activeObj.set({ angle: parseInt(angle) });
-      activeObj.setCoords();
-      activeCanvas.renderAll();
-      
-      document.getElementById('pictureRotationValue').textContent = angle + '°';
-      
-      if (angle != 0) {
-        showToolMessage(`🔄 Picture rotated to ${angle}°!`);
-      }
-    }
-
-    function rotatePicture() {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj) {
-        showToolMessage('🚫 Please select an object to rotate!');
-        return;
-      }
-      
-      const currentAngle = activeObj.angle || 0;
-      const newAngle = (currentAngle + 90) % 360;
-      
-      activeObj.set({ angle: newAngle });
-      activeObj.setCoords();
-      activeCanvas.renderAll();
-      
-      document.getElementById('pictureRotation').value = newAngle;
-      document.getElementById('pictureRotationValue').textContent = newAngle + '°';
-      
-      showToolMessage(`🔄 Picture rotated 90°! Now at ${newAngle}°`);
-    }
-
-    function flipPicture(direction) {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj) {
-        showToolMessage(`🚫 Please select an object to flip ${direction}!`);
-        return;
-      }
-      
-      if (direction === 'horizontal') {
-        activeObj.set({ flipX: !activeObj.flipX });
-        showToolMessage('↔️ Picture flipped horizontally!');
-      } else if (direction === 'vertical') {
-        activeObj.set({ flipY: !activeObj.flipY });
-        showToolMessage('↕️ Picture flipped vertically!');
-      }
-      
-      activeObj.setCoords();
-      activeCanvas.renderAll();
-      saveState();
-    }
-
-    function changePictureOpacity(opacityPercent) {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj) {
-        showToolMessage('🚫 Please select an object to change opacity!');
-        return;
-      }
-      
-      const opacity = opacityPercent / 100;
-      activeObj.set({ opacity: opacity });
-      activeCanvas.renderAll();
-      
-      document.getElementById('pictureOpacityValue').textContent = opacityPercent + '%';
-      
-      if (opacityPercent !== 100) {
-        showToolMessage(`👻 Picture opacity set to ${opacityPercent}%!`);
-      }
-    }
-
-    function selectAllObjects() {
-      const activeCanvas = canvases[currentLayerIndex];
-      const objects = activeCanvas.getObjects();
-      
-      if (objects.length === 0) {
-        showToolMessage('🚫 No objects to select!');
-        return;
-      }
-      
-      const selection = new fabric.ActiveSelection(objects, {
-        canvas: activeCanvas,
-      });
-      
-      activeCanvas.setActiveObject(selection);
-      activeCanvas.renderAll();
-      
-      selectedObjects = objects;
-      showToolMessage(`🎯 Selected all ${objects.length} objects!`);
-    }
-
-    function deleteSelectedObjects() {
-      const activeCanvas = canvases[currentLayerIndex];
-      const activeObj = activeCanvas.getActiveObject();
-      
-      if (!activeObj) {
-        showToolMessage('🚫 No objects selected to delete!');
-        return;
-      }
-      
-      if (activeObj.type === 'activeSelection') {
-        // Delete multiple selected objects
-        activeObj.forEachObject(function(obj) {
-          activeCanvas.remove(obj);
-        });
-      } else {
-        // Delete single object
-        activeCanvas.remove(activeObj);
-      }
-      
-      activeCanvas.discardActiveObject();
-      activeCanvas.renderAll();
-      
-      selectedObjects = [];
-      currentGroup = null;
-      saveState();
-      
-      showToolMessage('🗑️ Selected objects deleted!');
-    }
-
-    function clearSelection() {
-      const activeCanvas = canvases[currentLayerIndex];
-      activeCanvas.discardActiveObject();
-      activeCanvas.renderAll();
-      
-      selectedObjects = [];
-      currentGroup = null;
-      
-      showToolMessage('✨ Selection cleared!');
-    }
-
-    // Enhanced Tiny Brush Function
-    function setTinyBrush(size) {
-      // Clear all tiny brush active states
-      document.querySelectorAll('.tiny-brush-btn').forEach(btn => btn.classList.remove('active'));
-      
-      // Activate selected tiny brush
-      const tinyId = `tiny-${size.toString().replace('.', '')}`;
-      const tinyBtn = document.getElementById(tinyId);
-      if (tinyBtn) tinyBtn.classList.add('active');
-      
-      // Set the size
-      currentSize = size;
-      isTinyBrushActive = true;
-      
-      // Update UI
-      document.getElementById('brushSize').value = size;
-      document.getElementById('sizeValue').textContent = size;
-      
-      // Update canvas and preview
-      updateCurrentCanvas();
-      updateBrushPreview();
-      
-      // Show feedback
-      showToolMessage(`🔬 Tiny brush ${size}px activated! Perfect for details! ✨`);
-      
-      // Auto-zoom in for tiny brushes to help with precision
-      if (zoomLevel < 2 && size < 1) {
-        zoomLevel = 3;
-        updateZoom();
-        showToolMessage('🔍 Auto-zoomed for tiny brush precision!');
-      }
-    }
-
-    // Tool functions
-    function setTool(tool) {
-      // Remove active class from all tools
-      document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
-      
-      // Add active class to selected tool
-      const toolBtn = document.getElementById(`${tool}-tool`);
-      if (toolBtn) toolBtn.classList.add('active');
-      
-      currentTool = tool;
-      
-      // Show/hide relevant sections
-      document.getElementById('calligraphySection').style.display = tool === 'calligraphy' ? 'block' : 'none';
-      document.getElementById('imageSection').style.display = tool === 'image' ? 'block' : 'none';
-      document.getElementById('pictureSection').style.display = tool === 'move' ? 'block' : 'none';
-      
-      updateCurrentCanvas();
-      updateCursor();
-      
-      // Clear selections when switching away from move tool
-      if (tool !== 'move') {
-        clearSelection();
-        clearTinyBrushSelection();
-      }
-      
-      // Show tool feedback
-      showToolFeedback(tool);
-    }
-
-    function clearTinyBrushSelection() {
-      document.querySelectorAll('.tiny-brush-btn').forEach(btn => btn.classList.remove('active'));
-      isTinyBrushActive = false;
-    }
-
-    function showToolFeedback(tool) {
-      const toolNames = {
-        'brush': '🖌️ Brush Tool',
-        'paintbrush': '🎨 Paint Brush',
-        'pencil': '✏️ Pencil Tool',
-        'calligraphy': '✒️ Calligraphy Tool',
-        'text': '📝 Text Tool',
-        'image': '🖼️ Image Tool',
-        'move': '↔️ Move/Animation Tool',
-        'eraser': '🧹 Eraser Tool',
-        'fill': '🪣 Fill Bucket',
-        'spray': '💨 Spray Paint',
-        'marker': '🖍️ Marker Tool'
-      };
-      
-      // Create temporary feedback element
-      const feedback = document.createElement('div');
-      feedback.textContent = toolNames[tool] || tool;
-      feedback.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: linear-gradient(135deg, #ff6b9d, #4ecdc4);
-        color: white;
-        padding: 15px 30px;
-        border-radius: 20px;
-        font-size: 18px;
-        font-weight: 600;
-        z-index: 10000;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      `;
-      
-      document.body.appendChild(feedback);
-      
-      setTimeout(() => feedback.style.opacity = '1', 10);
-      setTimeout(() => {
-        feedback.style.opacity = '0';
-        setTimeout(() => document.body.removeChild(feedback), 300);
-      }, 1000);
-    }
-
-    function updateCursor() {
-      const container = document.getElementById('canvas-container');
-      
-      // Remove all cursor classes
-      container.classList.remove('fill-cursor', 'eraser-cursor', 'text-cursor', 'image-cursor', 'move-cursor');
-      
-      switch (currentTool) {
-        case 'fill':
-          container.classList.add('fill-cursor');
-          break;
-        case 'eraser':
-          container.classList.add('eraser-cursor');
-          break;
-        case 'text':
-        case 'calligraphy':
-          container.classList.add('text-cursor');
-          break;
-        case 'image':
-          container.classList.add('image-cursor');
-          break;
-        case 'move':
-          container.classList.add('move-cursor');
-          break;
-        default:
-          container.style.cursor = 'crosshair';
-      }
-    }
-
-    function updateCurrentCanvas() {
-      const activeCanvas = canvases[currentLayerIndex];
-      if (!activeCanvas) return;
-      
-      // Get actual brush size (enhanced for tiny brushes)
-      let actualBrushSize = currentSize;
-      
-      switch (currentTool) {
-        case 'move':
-          activeCanvas.isDrawingMode = false;
-          activeCanvas.selection = true;
-          activeCanvas.forEachObject(function(obj) {
-            obj.selectable = true;
-            obj.evented = true;
-          });
-          break;
-          
-        case 'brush':
-          activeCanvas.isDrawingMode = true;
-          activeCanvas.selection = false;
-          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          setupBrushSettings(activeCanvas);
-          break;
-          
-        case 'paintbrush':
-          activeCanvas.isDrawingMode = true;
-          activeCanvas.selection = false;
-          activeCanvas.freeDrawingBrush = createAdvancedBrush(activeCanvas);
-          setupPaintBrushSettings(activeCanvas);
-          break;
-          
-        case 'pencil':
-          activeCanvas.isDrawingMode = true;
-          activeCanvas.selection = false;
-          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          // Enhanced for tiny sizes
-          if (currentSize < 1) {
-            actualBrushSize = currentSize; // Keep exact tiny size
-          } else {
-            actualBrushSize = Math.max(0.1, currentSize * 0.4);
-          }
-          activeCanvas.freeDrawingBrush.width = actualBrushSize;
-          activeCanvas.freeDrawingBrush.color = currentColor;
-          activeCanvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
-          break;
-          
-        case 'calligraphy':
-          activeCanvas.isDrawingMode = true;
-          activeCanvas.selection = false;
-          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          // Calligraphy brush settings
-          actualBrushSize = currentSize < 1 ? currentSize * 2 : currentSize * 1.5;
-          activeCanvas.freeDrawingBrush.width = actualBrushSize;
-          activeCanvas.freeDrawingBrush.color = currentColor;
-          activeCanvas.freeDrawingBrush.shadowBlur = Math.max(1, actualBrushSize * 0.1);
-          activeCanvas.freeDrawingBrush.shadowColor = hexToRgba(currentColor, 0.3);
-          break;
-          
-        case 'text':
-        case 'image':
-          activeCanvas.isDrawingMode = false;
-          activeCanvas.selection = false;
-          break;
-          
-        case 'eraser':
-          activeCanvas.isDrawingMode = true;
-          activeCanvas.selection = false;
-          activeCanvas.freeDrawingBrush = new fabric.EraserBrush(activeCanvas);
-          // Enhanced eraser sizing
-          if (currentSize < 1) {
-            actualBrushSize = currentSize * 1.5; // Slightly larger for tiny erasers
-          } else {
-            actualBrushSize = currentSize * 1.2;
-          }
-          activeCanvas.freeDrawingBrush.width = actualBrushSize;
-          break;
-          
-        case 'fill':
-          activeCanvas.isDrawingMode = false;
-          activeCanvas.selection = false;
-          break;
-          
-        case 'spray':
-          activeCanvas.isDrawingMode = true;
-          activeCanvas.selection = false;
-          if (fabric.SprayBrush) {
-            activeCanvas.freeDrawingBrush = new fabric.SprayBrush(activeCanvas);
-            activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 3 : currentSize * 1.8;
-            activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
-            activeCanvas.freeDrawingBrush.density = Math.max(1, 40 - (currentHardness * 0.35));
-          } else {
-            activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-            activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 2 : currentSize * 1.5;
-            activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow * 0.7);
-          }
-          break;
-          
-        case 'marker':
-          activeCanvas.isDrawingMode = true;
-          activeCanvas.selection = false;
-          activeCanvas.freeDrawingBrush = new fabric.PencilBrush(activeCanvas);
-          activeCanvas.freeDrawingBrush.width = currentSize < 1 ? currentSize * 2 : currentSize * 1.4;
-          activeCanvas.freeDrawingBrush.color = hexToRgba(currentColor, 0.75 * currentOpacity);
-          break;
-          
-        default:
-          activeCanvas.isDrawingMode = false;
-          activeCanvas.selection = false;
-      }
-    }
-
-    function showToolMessage(message) {
-      const messageEl = document.createElement('div');
-      messageEl.textContent = message;
-      messageEl.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #4ecdc4, #45b7d1);
-        color: white;
-        padding: 15px 25px;
-        border-radius: 15px;
-        font-size: 16px;
-        font-weight: 600;
-        z-index: 10000;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        max-width: 300px;
-        opacity: 0;
-        transform: translateX(100%);
-        transition: all 0.4s ease;
-      `;
-      
-      document.body.appendChild(messageEl);
-      
-      setTimeout(() => {
-        messageEl.style.opacity = '1';
-        messageEl.style.transform = 'translateX(0)';
-      }, 10);
-      
-      setTimeout(() => {
-        messageEl.style.opacity = '0';
-        messageEl.style.transform = 'translateX(100%)';
-        setTimeout(() => document.body.removeChild(messageEl), 400);
-      }, 3000);
-    }
-
-    // Calligraphy Functions
-    function setCalligraphyFont(fontFamily) {
-      currentCalligraphyFont = fontFamily;
-      
-      // Update active font button
-      document.querySelectorAll('.font-btn').forEach(btn => btn.classList.remove('active'));
-      const fontButtons = {
-        'Dancing Script': 'font-dancing',
-        'Great Vibes': 'font-vibes',
-        'Kalam': 'font-kalam',
-        'Pacifico': 'font-pacifico'
-      };
-      
-      const activeBtn = document.getElementById(fontButtons[fontFamily]);
-      if (activeBtn) activeBtn.classList.add('active');
-      
-      showToolMessage(`✒️ Calligraphy font: ${fontFamily}`);
-    }
-
-    function handleCalligraphyEnter(event) {
-      if (event.key === 'Enter') {
-        const text = event.target.value;
-        if (text.trim()) {
-          addCalligraphyText(text);
-          event.target.value = '';
-        }
-      }
-    }
-
-    function addCalligraphyText(text) {
-      const activeCanvas = canvases[currentLayerIndex];
-      if (!activeCanvas) return;
-      
-      const fontSize = Math.max(12, currentSize * 2);
-      const fabricText = new fabric.Text(text, {
-        left: CANVAS_WIDTH / 2,
-        top: CANVAS_HEIGHT / 2,
-        fontFamily: currentCalligraphyFont,
-        fontSize: fontSize,
-        fill: currentColor,
-        originX: 'center',
-        originY: 'center',
-        angle: 0,
-        opacity: currentOpacity,
-        shadow: new fabric.Shadow({
-          color: hexToRgba(currentColor, 0.3),
-          blur: Math.max(2, fontSize * 0.05),
-          offsetX: 2,
-          offsetY: 2
-        })
-      });
-      
-      activeCanvas.add(fabricText);
-      activeCanvas.setActiveObject(fabricText);
-      activeCanvas.renderAll();
-      
-      saveState();
-      showToolMessage(`✒️ Beautiful calligraphy added! ✨`);
-    }
-
-    function handleTextClick(options, canvas) {
-      if (currentTool === 'calligraphy') {
-        const text = document.getElementById('calligraphyText').value;
-        if (text.trim()) {
-          const pointer = canvas.getPointer(options.e);
-          const fontSize = Math.max(12, currentSize * 2);
-          
-          const fabricText = new fabric.Text(text, {
-            left: pointer.x,
-            top: pointer.y,
-            fontFamily: currentCalligraphyFont,
-            fontSize: fontSize,
-            fill: currentColor,
-            originX: 'left',
-            originY: 'top',
-            opacity: currentOpacity,
-            shadow: new fabric.Shadow({
-              color: hexToRgba(currentColor, 0.3),
-              blur: Math.max(2, fontSize * 0.05),
-              offsetX: 2,
-              offsetY: 2
-            })
-          });
-          
-          canvas.add(fabricText);
-          canvas.setActiveObject(fabricText);
-          canvas.renderAll();
-          
-          document.getElementById('calligraphyText').value = '';
-          saveState();
-          showToolMessage('✒️ Calligraphy placed on canvas! ✨');
-        } else {
-          showToolMessage('📝 Please enter text for calligraphy first!');
-        }
-      } else if (currentTool === 'text') {
-        const text = prompt('Enter text:');
-        if (text && text.trim()) {
-          const pointer = canvas.getPointer(options.e);
-          const fontSize = Math.max(12, currentSize * 1.5);
-          
-          const fabricText = new fabric.Text(text, {
-            left: pointer.x,
-            top: pointer.y,
-            fontFamily: 'Poppins',
-            fontSize: fontSize,
-            fill: currentColor,
-            originX: 'left',
-            originY: 'top',
-            opacity: currentOpacity
-          });
-          
-          canvas.add(fabricText);
-          canvas.setActiveObject(fabricText);
-          canvas.renderAll();
-          
-          saveState();
-          showToolMessage('📝 Text added to canvas!');
-        }
-      }
-    }
-
-    // Image Functions
-    function handleImageClick(options, canvas) {
-      showToolMessage('🖼️ Use the image controls in the sidebar to insert images!');
-    }
-
-    function insertImageFromFile() {
-      document.getElementById('imageFileInput').click();
-    }
-
-    function handleImageFileLoad(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      if (!file.type.startsWith('image/')) {
-        showToolMessage('❌ Please select a valid image file!');
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        addImageToCanvas(e.target.result);
-      };
-      reader.readAsDataURL(file);
-      
-      event.target.value = '';
-    }
-
-    function insertImageFromURL() {
-      const url = prompt('Enter image URL:');
-      if (url && url.trim()) {
-        addImageToCanvas(url.trim());
-      }
-    }
-
-    function insertEmojiImage() {
-      const emoji = prompt('Enter emoji (e.g., 😀, 🎨, 🌈):');
-      if (emoji && emoji.trim()) {
-        addEmojiToCanvas(emoji.trim());
-      }
-    }
-
-    function addImageToCanvas(imageSrc) {
-      const activeCanvas = canvases[currentLayerIndex];
-      if (!activeCanvas) return;
-      
-      fabric.Image.fromURL(imageSrc, function(img) {
-        // Scale image to fit reasonably on canvas
-        const maxSize = 300;
-        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
-        
-        img.set({
-          left: CANVAS_WIDTH / 2,
-          top: CANVAS_HEIGHT / 2,
-          originX: 'center',
-          originY: 'center',
-          scaleX: scale,
-          scaleY: scale,
-          opacity: currentOpacity
-        });
-        
-        activeCanvas.add(img);
-        activeCanvas.setActiveObject(img);
-        activeCanvas.renderAll();
-        
-        saveState();
-        showToolMessage('🖼️ Image added to canvas! ✨');
-      }, {
-        crossOrigin: 'anonymous'
-      });
-    }
-
-    function addEmojiToCanvas(emoji) {
-      const activeCanvas = canvases[currentLayerIndex];
-      if (!activeCanvas) return;
-      
-      const fontSize = Math.max(48, currentSize * 4);
-      const fabricText = new fabric.Text(emoji, {
-        left: CANVAS_WIDTH / 2,
-        top: CANVAS_HEIGHT / 2,
-        fontSize: fontSize,
-        originX: 'center',
-        originY: 'center',
-        opacity: currentOpacity
-      });
-      
-      activeCanvas.add(fabricText);
-      activeCanvas.setActiveObject(fabricText);
-      activeCanvas.renderAll();
-      
-      saveState();
-      showToolMessage('😀 Emoji added to canvas! Fun! ✨');
-    }
-
-    function setupBrushSettings(canvas) {
-      // Enhanced precision for tiny brushes
-      let actualSize = currentSize;
-      if (currentSize < 1 && isTinyBrushActive) {
-        actualSize = currentSize; // Keep exact tiny size
-      }
-      
-      canvas.freeDrawingBrush.width = actualSize;
-      canvas.freeDrawingBrush.color = hexToRgba(currentColor, currentOpacity * currentFlow);
-      canvas.freeDrawingBrush.globalCompositeOperation = 'source-over';
-    }
-
-    function createAdvancedBrush(canvas) {
-      const brush = new fabric.PencilBrush(canvas);
-      return brush;
-    }
-
-    function setupPaintBrushSettings(canvas) {
-      const brush = canvas.freeDrawingBrush;
-      
-      // Enhanced size calculation for tiny brushes
-      let effectiveSize;
-      if (currentSize < 1) {
-        effectiveSize = currentSize * (0.9 + (pressureSimulation * 0.1)); // Less pressure variation for tiny
-      } else {
-        effectiveSize = currentSize * (0.8 + (pressureSimulation * 0.4));
-      }
-      
-      const effectiveOpacity = currentOpacity * currentFlow * (0.7 + (pressureSimulation * 0.3));
-      
-      brush.width = effectiveSize;
-      brush.color = hexToRgba(currentColor, effectiveOpacity);
-      
-      // Apply brush type effects
-      switch (currentBrushType) {
-        case 'soft':
-          brush.shadowBlur = currentSize < 1 ? Math.max(0.5, currentSize * 0.8) : Math.max(3, currentSize * 0.4 * (1 - currentHardness));
-          brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.6);
-          break;
-        case 'hard':
-          brush.shadowBlur = 0;
-          brush.shadowColor = 'transparent';
-          break;
-        case 'texture':
-          brush.width = effectiveSize * (0.9 + Math.random() * 0.2);
-          break;
-        default:
-          brush.shadowBlur = currentSize < 1 ? Math.max(0.2, currentSize * 0.3) : Math.max(0.5, currentSize * 0.15 * (1 - currentHardness));
-          brush.shadowColor = hexToRgba(currentColor, effectiveOpacity * 0.4);
-      }
-    }
-
-    // Enhanced Fill tool implementation
-    function handleFillClick(options, canvas) {
-      const pointer = canvas.getPointer(options.e);
-      const x = Math.floor(pointer.x);
-      const y = Math.floor(pointer.y);
-      
-      // Get canvas context for pixel manipulation
-      const ctx = canvas.getContext();
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const pixelData = imageData.data;
-      
-      // Get target color at click position
-      const targetColor = getPixelColor(pixelData, x, y, canvas.width);
-      const fillColor = hexToRgb(currentColor);
-      
-      // Don't fill if target and fill colors are the same
-      if (colorsEqual(targetColor, fillColor)) return;
-      
-      // Show fill feedback
-      showToolMessage('🪣 Filling area with color...');
-      
-      // Perform flood fill
-      floodFill(pixelData, x, y, targetColor, fillColor, canvas.width, canvas.height);
-      
-      // Apply the changes
-      ctx.putImageData(imageData, 0, 0);
-      canvas.renderAll();
-      
-      // Save state for undo
-      saveState();
-    }
-
-    function getPixelColor(pixelData, x, y, width) {
-      const index = (y * width + x) * 4;
-      return {
-        r: pixelData[index],
-        g: pixelData[index + 1],
-        b: pixelData[index + 2],
-        a: pixelData[index + 3]
-      };
-    }
-
-    function setPixelColor(pixelData, x, y, width, color) {
-      const index = (y * width + x) * 4;
-      pixelData[index] = color.r;
-      pixelData[index + 1] = color.g;
-      pixelData[index + 2] = color.b;
-      pixelData[index + 3] = color.a || 255;
-    }
-
-    function colorsEqual(color1, color2) {
-      return color1.r === color2.r && 
-             color1.g === color2.g && 
-             color1.b === color2.b && 
-             color1.a === color2.a;
-    }
-
-    function floodFill(pixelData, startX, startY, targetColor, fillColor, width, height) {
-      const stack = [{x: startX, y: startY}];
-      const visited = new Set();
-      
-      while (stack.length > 0) {
-        const {x, y} = stack.pop();
-        
-        if (x < 0 || x >= width || y < 0 || y >= height) continue;
-        
-        const key = y * width + x;
-        if (visited.has(key)) continue;
-        visited.add(key);
-        
-        const currentColor = getPixelColor(pixelData, x, y, width);
-        if (!colorsEqual(currentColor, targetColor)) continue;
-        
-        setPixelColor(pixelData, x, y, width, fillColor);
-        
-        // Add neighboring pixels
-        stack.push({x: x + 1, y: y});
-        stack.push({x: x - 1, y: y});
-        stack.push({x: x, y: y + 1});
-        stack.push({x: x, y: y - 1});
-      }
-    }
-
-    function hexToRgb(hex) {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-        a: 255
-      } : null;
-    }
-
-    function hexToRgba(hex, opacity) {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      if (result) {
-        const r = parseInt(result[1], 16);
-        const g = parseInt(result[2], 16);
-        const b = parseInt(result[3], 16);
-        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-      }
-      return hex;
-    }
-    
-    function handleHexInput(event) {
-        const hex = event.target.value;
-        const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-        if (hexRegex.test(hex)) {
-            selectColor(hex);
-        }
-    }
-
-    // Brush type functions
-    function setBrushType(type) {
-      currentBrushType = type;
-      
-      document.querySelectorAll('.brush-type-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`${type}-brush`).classList.add('active');
-      
-      updateCurrentCanvas();
-      updateBrushPreview();
-    }
-
-    // Color functions
-    function selectColor(color) {
-      currentColor = color;
-      document.getElementById('colorPicker').value = color;
-      document.getElementById('hexInput').value = color;
-      
-      document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
-      const colorBtn = document.querySelector(`[onclick="selectColor('${color}')"]`);
-      if (colorBtn) colorBtn.classList.add('active');
-      
-      updateCurrentCanvas();
-      updateBrushPreview();
-    }
-
-    // Enhanced Brush settings for tiny brushes
-    function updateBrushSize(size) {
-      currentSize = parseFloat(size);
-      
-      // Clear tiny brush selection if not using preset tiny size
-      const tinyPresets = [0.1, 0.2, 0.3, 0.5, 0.7, 0.8];
-      if (!tinyPresets.includes(currentSize)) {
-        clearTinyBrushSelection();
-      }
-      
-      // Enhanced size display
-      let displaySize = currentSize;
-      if (currentSize < 1) {
-        displaySize = currentSize.toFixed(1) + 'px';
-      } else if (currentSize < 10) {
-        displaySize = currentSize.toFixed(1);
-      } else {
-        displaySize = Math.round(currentSize);
-      }
-      
-      document.getElementById('sizeValue').textContent = displaySize;
-      document.getElementById('sizeDisplay').textContent = displaySize;
-      
-      updateCurrentCanvas();
-      updateBrushPreview();
-    }
-
-    function updateOpacity(opacity) {
-      currentOpacity = opacity / 100;
-      document.getElementById('opacityValue').textContent = opacity + '%';
-      updateCurrentCanvas();
-      updateBrushPreview();
-    }
-
-    function updateFlow(flow) {
-      currentFlow = flow / 100;
-      document.getElementById('flowValue').textContent = flow + '%';
-      updateCurrentCanvas();
-      updateBrushPreview();
-    }
-
-    function updateHardness(hardness) {
-      currentHardness = hardness / 100;
-      document.getElementById('hardnessValue').textContent = hardness + '%';
-      updateCurrentCanvas();
-      updateBrushPreview();
-    }
-
-    function updateBrushPreview() {
-      const preview = document.getElementById('brushPreview');
-      
-      // Enhanced preview sizing for tiny brushes
-      let previewSize;
-      if (currentSize < 1) {
-        previewSize = Math.max(2, currentSize * 20); // Make tiny brushes visible in preview
-      } else {
-        previewSize = Math.max(3, currentSize / 4);
-      }
-      
-      preview.style.width = previewSize + 'px';
-      preview.style.height = previewSize + 'px';
-      preview.style.backgroundColor = currentColor;
-      preview.style.opacity = currentOpacity * currentFlow;
-      
-      // Apply brush type effects to preview
-      switch (currentBrushType) {
-        case 'soft':
-          const blurAmount = currentSize < 1 ? Math.max(0.5, previewSize * 0.2) : Math.max(1, previewSize * 0.4 * (1 - currentHardness));
-          preview.style.filter = `blur(${blurAmount}px)`;
-          preview.style.boxShadow = `0 0 ${blurAmount * 3}px ${currentColor}`;
-          break;
-        case 'hard':
-          preview.style.filter = 'none';
-          preview.style.boxShadow = 'none';
-          preview.style.borderRadius = currentSize < 1 ? '50%' : '3px';
-          break;
-        case 'texture':
-          preview.style.filter = 'none';
-          preview.style.boxShadow = `inset 0 0 ${previewSize}px rgba(0,0,0,0.4)`;
-          preview.style.background = `linear-gradient(45deg, ${currentColor}, ${currentColor}dd)`;
-          break;
-        default:
-          const softBlur = currentSize < 1 ? Math.max(0.2, previewSize * 0.1) : Math.max(0.5, previewSize * 0.15 * (1 - currentHardness));
-          preview.style.filter = `blur(${softBlur}px)`;
-          preview.style.boxShadow = `0 0 ${softBlur * 6}px ${currentColor}66`;
-          preview.style.borderRadius = '50%';
-      }
-      
-      // Special highlighting for tiny brushes
-      if (currentSize < 1) {
-        preview.style.border = '2px solid #00ff00';
-        preview.style.animation = 'tinyGlow 2s ease-in-out infinite alternate';
-      } else {
-        preview.style.border = 'none';
-        preview.style.animation = 'none';
-      }
-      
-      updatePressureIndicator();
-    }
-
-    // Add tiny glow animation
-    const tinyGlowStyle = document.createElement('style');
-    tinyGlowStyle.textContent = `
-      @keyframes tinyGlow {
-        from { box-shadow: 0 0 5px #00ff00, inset 0 0 5px rgba(0, 255, 0, 0.2); }
-        to { box-shadow: 0 0 15px #00ff00, inset 0 0 10px rgba(0, 255, 0, 0.4); }
-      }
-    `;
-    document.head.appendChild(tinyGlowStyle);
-
-    function updatePressureIndicator() {
-      const pressureBar = document.getElementById('pressureBar');
-      if (pressureBar) {
-        pressureBar.style.width = (pressureSimulation * 100) + '%';
-      }
-    }
-
-    function simulatePressureChange() {
-      pressureSimulation = 0.4 + Math.random() * 0.6;
-      updatePressureIndicator();
-      
-      if (currentTool === 'paintbrush' && canvases[currentLayerIndex]) {
-        updateCurrentCanvas();
-      }
-    }
-
-    setInterval(simulatePressureChange, 2500);
-
-    // Layer functions
-    function updateLayersPanel() {
-      const panel = document.getElementById('layersPanel');
-      panel.innerHTML = '';
-      
-      for (let i = canvases.length - 1; i >= 0; i--) {
-        const layerItem = document.createElement('div');
-        layerItem.className = `layer-item ${i === currentLayerIndex ? 'active' : ''}`;
-        layerItem.onclick = () => setActiveLayer(i);
-        
-        layerItem.innerHTML = `
-          <span>🎨 Layer ${i + 1}</span>
-          <div class="layer-controls">
-            <button class="layer-control-btn" onclick="event.stopPropagation(); toggleLayerVisibility(${i})" title="Toggle Visibility">👁️</button>
-            ${i > 0 ? `<button class="layer-control-btn" onclick="event.stopPropagation(); deleteLayer(${i})" title="Delete Layer">🗑️</button>` : ''}
-          </div>
-        `;
-        
-        panel.appendChild(layerItem);
-      }
-    }
-
-    function setActiveLayer(index) {
-      canvases.forEach(canvas => {
-        canvas.isDrawingMode = false;
-      });
-      
-      currentLayerIndex = index;
-      updateCurrentCanvas();
-      updateLayersPanel();
-      
-      showToolMessage(`🎨 Switched to Layer ${index + 1}`);
-    }
-
-    function addLayer() {
-      if (canvases.length >= MAX_LAYERS) {
-        showToolMessage('📚 Maximum number of layers reached! Try combining some layers first.');
-        return;
-      }
-      
-      const newIndex = canvases.length;
-      createLayer(newIndex);
-      setActiveLayer(newIndex);
-      updateLayersPanel();
-      
-      showToolMessage(`✨ New Layer ${newIndex + 1} created!`);
-    }
-
-    function deleteLayer(index) {
-      if (canvases.length <= 1) {
-        showToolMessage('🚫 Cannot delete the last layer! Create a new layer first.');
-        return;
-      }
-      
-      const canvasEl = document.getElementById(`canvas-${index}`);
-      if (canvasEl) {
-        canvasEl.remove();
-      }
-      
-      canvases.splice(index, 1);
-      
-      for (let i = index; i < canvases.length; i++) {
-        const canvas = canvases[i];
-        canvas.lowerCanvasEl.id = `canvas-${i}`;
-        canvas.lowerCanvasEl.style.zIndex = i;
-      }
-      
-      if (currentLayerIndex >= index) {
-        currentLayerIndex = Math.max(0, currentLayerIndex - 1);
-      }
-      
-      setActiveLayer(currentLayerIndex);
-      updateLayersPanel();
-      
-      showToolMessage('🗑️ Layer deleted successfully!');
-    }
-
-    function toggleLayerVisibility(index) {
-      const canvas = canvases[index];
-      if (canvas) {
-        const isVisible = canvas.lowerCanvasEl.style.display !== 'none';
-        canvas.lowerCanvasEl.style.display = isVisible ? 'none' : 'block';
-        canvas.upperCanvasEl.style.display = isVisible ? 'none' : 'block';
-        
-        showToolMessage(isVisible ? '👁️‍🗨️ Layer hidden' : '👁️ Layer visible');
-      }
-    }
-
-    // Enhanced Zoom functions with tiny brush considerations
-    function zoomIn() {
-      zoomLevel = Math.min(zoomLevel * 1.25, 16.0); // Increased max zoom for tiny brushes
-      updateZoom();
-      showToolMessage(`🔍 Zoomed in to ${Math.round(zoomLevel * 100)}%`);
-    }
-
-    function zoomOut() {
-      zoomLevel = Math.max(zoomLevel / 1.25, 0.1);
-      updateZoom();
-      showToolMessage(`🔍 Zoomed out to ${Math.round(zoomLevel * 100)}%`);
-    }
-
-    function updateZoom() {
-      document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
-      canvases.forEach(canvas => {
-        resizeCanvas(canvas);
-      });
-    }
-
-    // Enhanced Undo/Redo system
-    function saveState() {
-      const activeCanvas = canvases[currentLayerIndex];
-      if (activeCanvas) {
-        undoStack.push({
-          layerIndex: currentLayerIndex,
-          state: JSON.stringify(activeCanvas.toJSON())
-        });
-        
-        if (undoStack.length > 100) {
-          undoStack.shift();
-        }
-        
-        redoStack = [];
-      }
-    }
-
-    function undoAction() {
-      if (undoStack.length === 0) {
-        showToolMessage('🚫 Nothing to undo!');
-        return;
-      }
-      
-      const currentState = undoStack.pop();
-      const activeCanvas = canvases[currentState.layerIndex];
-      
-      if (activeCanvas) {
-        redoStack.push({
-          layerIndex: currentState.layerIndex,
-          state: JSON.stringify(activeCanvas.toJSON())
-        });
-        
-        activeCanvas.loadFromJSON(currentState.state, () => {
-          activeCanvas.renderAll();
-        });
-        
-        showToolMessage('↶ Undid last action');
-      }
-    }
-
-    function redoAction() {
-      if (redoStack.length === 0) {
-        showToolMessage('🚫 Nothing to redo!');
-        return;
-      }
-      
-      const redoState = redoStack.pop();
-      const activeCanvas = canvases[redoState.layerIndex];
-      
-      if (activeCanvas) {
-        undoStack.push({
-          layerIndex: redoState.layerIndex,
-          state: JSON.stringify(activeCanvas.toJSON())
-        });
-        
-        activeCanvas.loadFromJSON(redoState.state, () => {
-          activeCanvas.renderAll();
-        });
-        
-        showToolMessage('↷ Redid last action');
-      }
-    }
-
-    function clearCurrentLayer() {
-      if (confirm('🧼 Clear this layer? This action cannot be undone!')) {
-        const activeCanvas = canvases[currentLayerIndex];
-        if (activeCanvas) {
-          saveState();
-          activeCanvas.clear();
-          if (currentLayerIndex === 0) {
-            activeCanvas.backgroundColor = '#ffffff';
-          }
-          activeCanvas.renderAll();
-          
-          showToolMessage('🧼 Layer cleared successfully!');
-        }
-      }
-    }
-    
-    function newProject() {
-      if (confirm('🆕 Create a new canvas? Your current silly artwork will be lost!')) {
-        undoStack = [];
-        redoStack = [];
-        
-        canvases.forEach((canvas, index) => {
-          canvas.clear();
-          if (index === 0) {
-            canvas.backgroundColor = '#ffffff';
-          } else {
-            canvas.backgroundColor = 'transparent';
-          }
-          canvas.renderAll();
-        });
-        
-        currentLayerIndex = 0;
-        zoomLevel = 1.0;
-        updateZoom();
-        updateLayersPanel();
-        setActiveLayer(0);
-        updateCurrentCanvas();
-        
-        showToolMessage('🆕 New canvas created! Start painting something silly! ✨');
-      }
-    }
-    
-    function saveProject() {
-      try {
-        const projectData = {
-          version: '2.3',
-          app: 'Silly Paintings Painting World (Enhanced with Animation)',
-          timestamp: new Date().toISOString(),
-          layers: [],
-          settings: {
-            width: CANVAS_WIDTH,
-            height: CANVAS_HEIGHT,
-            currentLayer: currentLayerIndex,
-            zoom: zoomLevel,
-            brushSettings: {
-              size: currentSize,
-              color: currentColor,
-              opacity: currentOpacity,
-              flow: currentFlow,
-              hardness: currentHardness,
-              type: currentBrushType,
-              tool: currentTool
-            },
-            calligraphySettings: {
-              font: currentCalligraphyFont
-            }
-          }
-        };
-        
-        canvases.forEach((canvas, index) => {
-          projectData.layers.push({
-            index: index,
-            data: canvas.toJSON(),
-            visible: canvas.lowerCanvasEl.style.display !== 'none'
-          });
-        });
-        
-        const dataStr = JSON.stringify(projectData, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        
-        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        const exportFileDefaultName = `silly_painting_animation_${timestamp}.json`;
-        
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-        
-        showToolMessage('💾 Enhanced silly painting with animation features saved!');
-        
-      } catch (error) {
-        showToolMessage('❌ Error saving project: ' + error.message);
-      }
-    }
-    
-    function loadProject() {
-      document.getElementById('fileInput').click();
-    }
-    
-    function handleFileLoad(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const projectData = JSON.parse(e.target.result);
-          loadCanvasData(projectData);
-          showToolMessage('📂 Enhanced silly painting with animation loaded!');
-          
-        } catch (error) {
-          showToolMessage('❌ Error loading project: ' + error.message);
-        }
-      };
-      
-      reader.readAsText(file);
-    }
-
-    function loadCanvasData(projectData) {
-      if (!projectData.layers || !Array.isArray(projectData.layers)) {
-        throw new Error('Invalid project file format');
-      }
-
-      // Clear existing canvases
-      canvases.forEach(canvas => {
-        const canvasEl = canvas.lowerCanvasEl;
-        if (canvasEl && canvasEl.parentNode) {
-          canvasEl.parentNode.removeChild(canvasEl);
-        }
-      });
-      canvases = [];
-
-      // Load project layers
-      projectData.layers.forEach((layerData, index) => {
-        createLayer(index);
-        const canvas = canvases[index];
-        
-        canvas.loadFromJSON(layerData.data, () => {
-          canvas.renderAll();
-          
-          if (layerData.visible === false) {
-            canvas.lowerCanvasEl.style.display = 'none';
-            canvas.upperCanvasEl.style.display = 'none';
-          }
-        });
-      });
-      
-      // Restore settings
-      currentLayerIndex = projectData.settings?.currentLayer || 0;
-      if (currentLayerIndex >= canvases.length) {
-        currentLayerIndex = 0;
-      }
-      
-      if (projectData.settings?.zoom) {
-        zoomLevel = projectData.settings.zoom;
-        updateZoom();
-      }
-      
-      // Restore brush settings if available
-      if (projectData.settings?.brushSettings) {
-        const brushSettings = projectData.settings.brushSettings;
-        
-        if (brushSettings.size !== undefined) {
-          currentSize = brushSettings.size;
-          document.getElementById('brushSize').value = currentSize;
-          updateBrushSize(currentSize);
-        }
-        
-        if (brushSettings.color) {
-          selectColor(brushSettings.color);
-        }
-        
-        if (brushSettings.opacity !== undefined) {
-          currentOpacity = brushSettings.opacity;
-          document.getElementById('brushOpacity').value = currentOpacity * 100;
-          updateOpacity(currentOpacity * 100);
-        }
-        
-        if (brushSettings.type) {
-          setBrushType(brushSettings.type);
-        }
-        
-        if (brushSettings.tool) {
-          setTool(brushSettings.tool);
-        }
-      }
-      
-      // Restore calligraphy settings
-      if (projectData.settings?.calligraphySettings?.font) {
-        setCalligraphyFont(projectData.settings.calligraphySettings.font);
-      }
-      
-      setActiveLayer(currentLayerIndex);
-      updateLayersPanel();
-      
-      document.getElementById('fileInput').value = ''; // Clear file input
-    }
-    
-    function exportPNG() {
-      try {
-        const mergedCanvas = document.createElement('canvas');
-        mergedCanvas.width = CANVAS_WIDTH;
-        mergedCanvas.height = CANVAS_HEIGHT;
-        const ctx = mergedCanvas.getContext('2d');
-        
-        // White background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        
-        // Merge all visible layers
-        canvases.forEach(canvas => {
-          if (canvas.lowerCanvasEl.style.display !== 'none') {
-            ctx.drawImage(canvas.lowerCanvasEl, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-          }
-        });
-        
-        const image = mergedCanvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
-        link.download = `silly_masterpiece_animation_${timestamp}.png`;
-        link.href = image;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        showToolMessage('📷 Enhanced silly artwork with animation exported! 🎉');
-        
-      } catch (error) {
-        showToolMessage('❌ Error exporting image: ' + error.message);
-      }
-    }
-
-    // Enhanced touch support for mobile devices
-    function addTouchSupport() {
-      canvases.forEach(canvas => {
-        const canvasEl = canvas.upperCanvasEl;
-        
-        // Prevent default touch behaviors
-        canvasEl.addEventListener('touchstart', function(e) {
-          e.preventDefault();
-          const touch = e.touches[0];
-          const mouseEvent = new MouseEvent('mousedown', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-          });
-          canvasEl.dispatchEvent(mouseEvent);
-        }, { passive: false });
-        
-        canvasEl.addEventListener('touchmove', function(e) {
-          e.preventDefault();
-          const touch = e.touches[0];
-          const mouseEvent = new MouseEvent('mousemove', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-          });
-          canvasEl.dispatchEvent(mouseEvent);
-        }, { passive: false });
-        
-        canvasEl.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          const mouseEvent = new MouseEvent('mouseup', {});
-          canvasEl.dispatchEvent(mouseEvent);
-        }, { passive: false });
-      });
-    }
-
-    // Easter eggs and fun interactions
-    function addEasterEggs() {
-      let clickCount = 0;
-      const logo = document.querySelector('.logo');
-      
-      logo.addEventListener('click', function() {
-        clickCount++;
-        if (clickCount === 5) {
-          // Rainbow effect
-          this.style.background = 'linear-gradient(45deg, #ff6b9d, #4ecdc4, #45b7d1, #96ceb4, #ffa500, #ff6b9d)';
-          this.style.webkitBackgroundClip = 'text';
-          this.style.webkitTextFillColor = 'transparent';
-          this.style.backgroundSize = '400% 400%';
-          this.style.animation = 'rainbow 2s ease-in-out infinite';
-          
-          // Add sparkle effect
-          createSparkles();
-          
-          showToolMessage('🌈 You found the silly rainbow mode! Now with ANIMATION POWERS! ✨🎬');
-          
-          setTimeout(() => {
-            clickCount = 0;
-            this.style.background = '';
-            this.style.webkitBackgroundClip = '';
-            this.style.webkitTextFillColor = '';
-            this.style.backgroundSize = '';
-            this.style.animation = '';
-          }, 8000);
-        } else if (clickCount === 3) {
-          showToolMessage('🎯 Almost there! Click 2 more times for animation magic! ✨🎬');
-        }
-      });
-    }
-
-    function createSparkles() {
-      for (let i = 0; i < 20; i++) {
-        setTimeout(() => {
-          const sparkle = document.createElement('div');
-          sparkle.textContent = '✨';
-          sparkle.style.cssText = `
-            position: fixed;
-            font-size: ${Math.random() * 20 + 15}px;
-            left: ${Math.random() * 100}vw;
-            top: ${Math.random() * 100}vh;
-            pointer-events: none;
-            z-index: 10000;
-            animation: sparkleFloat 3s ease-out forwards;
-          `;
-          
-          const style = document.createElement('style');
-          style.textContent = `
-            @keyframes sparkleFloat {
-              0% { opacity: 1; transform: translateY(0) rotate(0deg); }
-              100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
-            }
-          `;
-          document.head.appendChild(style);
-          
-          document.body.appendChild(sparkle);
-          
-          setTimeout(() => {
-            if (document.body.contains(sparkle)) {
-              document.body.removeChild(sparkle);
-            }
-          }, 3000);
-        }, i * 100);
-      }
-    }
-
-    // Rainbow animation keyframes
-    const rainbowStyle = document.createElement('style');
-    rainbowStyle.textContent = `
-      @keyframes rainbow {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
-    `;
-    document.head.appendChild(rainbowStyle);
-
-    // Initialize everything when page loads
-    setTimeout(() => {
-      addTouchSupport();
-      addEasterEggs();
-    }, 2500);
-
-    // --- AUTOSAVE FUNCTIONALITY ---
-    
-    function createProjectDataObject() {
-      const projectData = {
-        version: '2.3',
-        app: 'Silly Paintings Painting World (Enhanced with Animation)',
-        timestamp: new Date().toISOString(),
-        layers: [],
-        settings: {
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
-          currentLayer: currentLayerIndex,
-          zoom: zoomLevel,
-          brushSettings: {
-            size: currentSize,
-            color: currentColor,
-            opacity: currentOpacity,
-            flow: currentFlow,
-            hardness: currentHardness,
-            type: currentBrushType,
-            tool: currentTool
-          },
-          calligraphySettings: {
-            font: currentCalligraphyFont
-          }
-        }
-      };
-
-      canvases.forEach((canvas, index) => {
-        projectData.layers.push({
-          index: index,
-          data: canvas.toJSON(),
-          visible: canvas.lowerCanvasEl.style.display !== 'none'
-        });
-      });
-      return projectData;
-    }
-
-    // Auto-save functionality (to localStorage)
-    function autoSave() {
-      try {
-        const projectData = createProjectDataObject();
-        const dataStr = JSON.stringify(projectData);
-        localStorage.setItem(LOCAL_STORAGE_KEY, dataStr);
-        showAutoSaveStatus('🎨 Autosaved with animation features!');
-      } catch (error) {
-        console.error('Auto-save failed:', error.message);
-        showAutoSaveStatus('❌ Autosave failed!');
-      }
-    }
-
-    // Function to load auto-saved project from localStorage
-    function loadAutoSavedProject() {
-      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedData) {
-        const projectData = JSON.parse(savedData);
-        if (projectData && projectData.layers && Array.isArray(projectData.layers) && projectData.layers.length > 0) {
-          // A saved project exists. Ask the user if they want to restore it.
-          const restore = confirm('An auto-saved project was found. Would you like to restore it?');
-          if (restore) {
-            try {
-              loadCanvasData(projectData);
-              showToolMessage('💾 Restored auto-saved animation project!');
-            } catch (error) {
-              console.error('Failed to restore auto-saved project:', error.message);
-              showToolMessage('❌ Failed to restore auto-saved project.');
-              createInitialLayers(); // Fallback to creating a new project
-            }
-          } else {
-            // User chose not to restore, so create a new project.
-            createInitialLayers();
-          }
-        } else {
-          // Auto-save data is invalid or empty, so create a new project.
-          createInitialLayers();
-        }
-      } else {
-        // No auto-save data found, so create a new project.
-        createInitialLayers();
-      }
-    }
-    
-    // Function to show a temporary auto-save status message
-    function showAutoSaveStatus(message) {
-      const statusEl = document.getElementById('autosave-status');
-      if (statusEl) {
-        statusEl.textContent = message;
-        statusEl.style.opacity = '1';
-        setTimeout(() => {
-          statusEl.style.opacity = '0';
-        }, 3000);
-      }
-    }
-    
-  </script>
-</body>
-</html>
